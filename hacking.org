@@ -1,0 +1,20 @@
+* Setting up to develop
+
+Since I always forget how this works.
+
+1. Create virtualenv in root of git repo
+   #+begin_src sh
+virtualenv venv
+. venv/bin/activate
+   #+end_src
+2. (Only once) install development dependencies
+   #+begin_src sh
+pip install jedi elpy nose
+   #+end_src
+3. (Only once) install this package
+   #+begin_src sh
+python setup.py develop
+   #+end_src
+4. Get emacs up to speed
+   1. =M-x pyvenv-activate= choose the =venv/= subdirectory
+   2. =M-x elpy-rpc-restart=

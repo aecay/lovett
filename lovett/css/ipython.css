@@ -1,0 +1,22 @@
+.tree-node {
+    margin-left: 20px;
+    border: 1px solid silver;
+    border-left: 4px solid #4682B4;
+    background-color: #EFEFEF;
+    padding: 2px;
+    cursor: pointer;
+    color: black;
+}
+
+.tree-text {
+    margin-left: 20px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border: 1px solid black;
+    background-color: white;
+    color: black;
+}
+
+.tree-root {
+    width: 100%;
+}

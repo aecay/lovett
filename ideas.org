@@ -1,0 +1,183 @@
+* code samples for search fns
+** hasDaughter(...)
+
+#+begin_example
+SELECT parent FROM dom
+WHERE child IN ...
+      AND depth = 0
+#+end_example
+** hasLabel(...)
+
+#+begin_example
+SELECT rowid FROM nodes
+WHERE label = ...
+#+end_example
+
+Also requires injecting function(s) into sqlite to cope with regexes etc. – see ~createscalarfunction~.
+
+* Core relations
+
+- dominance
+- sister-precedence
+- coindexation???
+  - other 2 are similar, this is different
+
+Allow corpora to specify their own set of relationships in metadata?
+Difficult but also better expandability?
+Also consider implications for annotation (how to flexibly allow annotating various relationship types?)
+
+Is is tenable to have relationships definable programmatically?
+
+hasSister, precedes, ... = makeRelation(irreflexive, transitive, asymmetric)
+hasIndex, ... = makeRelation(reflexive, intrans, symmetric)
+
+Maybe reflexivity is not an argument, but rather a variant...you get both types:
+
+sprec, sprecIRR = makeRelation(...)
+
+Then: maybe only 2 kinds of relation: dom-like and sameIndex-like
+(perhaps 3rd type = sprec?)
+
+NEXT STEP:
+
+can we define precedes (see below) as a generalized combo of these relationship types?
+
+precedes = mix(doms, sprecIRR) ?
+
+** Defining “precedes”
+
+X precedes Y iff:
+- Z doms X AND
+- Z sprec W AND
+- W doms Y
+
+Where doms is reflexive but sprec is irreflexive
+
+
+* Metadata
+
+- how to incorporate in DB?
+  - key: val – easy
+    - table of (nodeid, key, val)
+  - nested structure in metadata – hard???
+
+Metadata on trees (roots):
+- text
+- sequence #
+- ...
+
+Need separate db for text metadata:
+- year of composition
+- author
+- ...
+
+How to support searching?  Force users to specify what level to query metadata at?
+
+Do we want to allow arbitrary metadata containers?
+Not all sentences from the same text have the same author/year/etc.
+(But they could be forced into different texts).
+For modern texts, we may be able to locate sentences more precisely in time (e.g. email corpus...)
+
+* File format
+
+- use standoff annotation?
+  - TEI compatible?
+
+But also need a Penn Treebank compatible reader/writer, of course
+
+* Ipython interface
+
+- hook up to other components of python ecosystem, e.g. pandas
+
+
+* coding queries
+
+corpus.code(<query to pick target nodes>,
+            <name of metadata to add>,
+            <ordered dict of key, query>)
+
+* corpus revision queries
+
+problem 1: extracting node ids
+
+solution?: overload index syntax
+
+findNode(hasLabel(“IP”) & hasDaughter[1](hasLabel(“NP”) & hasSister[2](hasLabel(“VBP”))))
+
+returns a list of the labels of:
+the IP (position 0 – by default)
+the NP (position 1)
+the VBP (position 2)
+
+PITFALL: put the index on the function to get the id of its argument!
+
+THEN: we need a set of primitive modifications to recode the corpus, which can operate on the IDs returned from such a search
+
+
+* A tree class
+
+Need a tree class that acts as a pointer into the db, but can print itself/fetch children/etc.
+
+Also add methods for corpus mutation to this class? (As in old system)
+
+* Ignoring nodes
+
+use transactions: start transaction; make modifictation; drop txn
+
+for ignorenodes: prune matching nodes from DB
+
+for preventing recursion (like ~remove_nodes~ leading to several trees rooted at clause lvl): snip the dominance relation; put in a dummy node at the old position
+
+leads to questions of how to remove and replace a node...  idea:
+- reify tree into labeled brackets
+- prune all daughters; add RMV daughter
+- add the labeled-brax tree into the db
+- add a reference from the new tree to its old root
+
+issues raised:
+- must go bottom-up, or the newly added trees will have illegal embedded structures
+- not the most efficient...
+
+BETTER IDEA:
+- add a new, empty root CP to the db
+- reparent all daughters of the old CP to the new one
+- add a “RMV” daughter to the old one
+- add the backreference to the old tree
+
+* PACQL/Eirikald issues
+
+** Weak query language
+
+- no ignorenodes
+- no “not” or “or” -> not complete boolean system
+
+** Strange results
+
+#+begin_example
+IP-(MAT|SUB) idoms MDPI
+NP-SBJ idoms N-D
+#+end_example
+
+NP-SBJ can be outside of IP
+Ergo: need to add an implicit constraint that the anchor doms every other referenced node?
+* An important note about searching
+
+“XP idoms YP” implies that there is only one kind of thing about a node – its text/label.
+But we want to specify nodes in multiple ways, ergo we must explicitly use things like “hasLabel(XP) idoms hasLabel(YP)”, or its non-infix notation equivalent.
+
+* On the distinction leaf/nonterminal
+
+Maybe instead of having a class distinction, we should just have one kind of “node,” and make distinctions on a case by case basis:
+- has TEXT metadata -> is text
+- has INDEX -> is trace
+- has SILENT -> is silent
+- has COMMENT -> is comment
+- has ID -> is root node
+- ...
+- else -> is non-terminal
+
+the len() of terminals would be zero; we need to enforce that non-terminals have positive len
+
+* org->ipython notebook exporter
+
+for exporting the usage example to a usable notebook
