@@ -1,0 +1,4 @@
+# TODO: description of the indexing scheme and corpus search operators
+# sprec, sprec_R, doms, doms_R, how precedes follows from that, ...
+# metadata, other indexed features of trees
+# section on query optimization?

@@ -1,0 +1,21 @@
+# TODO: doc landing page
+
+* Lovett in a nutshell
+
+- about the name
+- target audience = advanced technical users and python programmers (initially)
+
+** Development goals
+
+Lovett is developed with the following goals in mind:
+
+1. Primary goals
+   - Provide a fast corpus query engine, and a new query language on top of it
+   - Provide a usable system for automated corpus revision
+2. Secondary goals
+   - Provide a replacement for CorpusSearch’s coding query feature
+   - Connect this facility with tools for data analysis and visualization in python and R via the Jupyter project
+3. Tertiary goals
+   - Provide an environment for the design of corpus-based teaching and learning programs
+
+It is anticipated that Lovett will interact with the Annotald tool, and efforts to create a Javascript-based ecosystem for the representation, manipulation, and editing of treebanks.
