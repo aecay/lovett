@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import abc
 import collections.abc
+import re
+import json
 
 import lovett.util as util
 
@@ -10,8 +12,63 @@ import lovett.util as util
 ABSENT_ID = "LOVETT_MISSING_ID"
 
 
-# TODO: add class that lets us do tree.metadata.lemma instead of
-# tree.metadata["LEMMA"]
+_METADATA_KEY_RX = re.compile("^[A-Z0-9-]+$")
+
+
+def _check_metadata_name(name):
+    name_t = name.upper().replace("_", "-")
+    if (not _METADATA_KEY_RX.match(name_t)) or name.startswith("-") or \
+       name.endswith("-") or name == "GET":
+        raise ValueError("Illegal metadata key name %s (interpreted as %s)" %
+                         (name, name_t))
+    return name_t
+
+
+class Metadata(collections.abc.MutableMapping):
+    __slots__ = ("_dict",)
+
+    def __init__(self, dic):
+        self._dict = dic
+
+    def __getitem__(self, name):
+        _check_metadata_name(name)
+        return self._dict[name]
+
+    def __setitem__(self, name, value):
+        _check_metadata_name(name)
+        self._dict[name] = value
+
+    def __delitem__(self, name):
+        _check_metadata_name(name)
+        del self._dict[name]
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __getattr__(self, name):
+        if name == "get":
+            return self._dict.get
+        if name.startswith("_"):
+            return super().__getitem__(name)
+        name = _check_metadata_name(name)
+        try:
+            return self._dict[name]
+        except KeyError:
+            return None
+
+    def __setattr__(self, name, value):
+        if name.startswith("_"):
+            super().__setattr__(name, value)
+            return
+        name = _check_metadata_name(name)
+        self._dict[name] = value
+
+    def __delattr__(self, name):
+        name = _check_metadata_name(name)
+        del self._dict[name]
 
 
 class Tree(abc.ABC):
@@ -20,18 +77,37 @@ class Tree(abc.ABC):
     def __init__(self, label, metadata=None):
         self.parent = None
         # TODO: we might want to parse metadata
-        self.metadata = metadata or {}
+        self.metadata = Metadata(metadata or {})
         label, idxtype, idx = util.label_and_index(label)
         self._label = label
         if idx is not None:
-            self.metadata['INDEX'] = idx
+            self.metadata.index = idx
             # TODO: what's the standard name
-            self.metadata['IDX-TYPE'] = idxtype
+            self.metadata.idx_type = idxtype
 
     @abc.abstractmethod
     def __eq__(self, other):
         return self.metadata == other.metadata and \
             self._label == other._label
+
+    @abc.abstractmethod
+    def __str__(self):
+        pass
+
+    @abc.abstractmethod
+    def __repr__(self):
+        pass
+
+    @abc.abstractmethod
+    def _repr_html_(self):
+        pass
+
+    @abc.abstractmethod
+    def _to_json_pre(self):
+        pass
+
+    def to_json(self):
+        return json.dumps(self._to_json_pre())
 
     @property
     def label(self):
@@ -85,10 +161,14 @@ class Tree(abc.ABC):
         r = r.replace("LOVETT_DEL_SP", "")
         return r.strip()
 
+    @property
+    def id(self):
+        return self.root.metadata.id
+
 
 def _index_string_for_metadata(metadata):
-    idx = metadata.get("INDEX")
-    idxconn = "=" if metadata.get("IDX-TYPE") == "gap" else "-"
+    idx = metadata.index
+    idxconn = "=" if metadata.idx_type == "gap" else "-"
     if idx:
         return idxconn + str(idx)
     return ""
@@ -104,7 +184,7 @@ class Leaf(Tree):
     def __str__(self, indent=0):
         idxstr = _index_string_for_metadata(self.metadata)
         text = self.text
-        lemma = self.metadata.get("LEMMA")
+        lemma = self.metadata.lemma
         if lemma:
             text += "-" + lemma
         if util.is_trace(self):
@@ -137,6 +217,12 @@ class Leaf(Tree):
                   <span class=\"tree-label\">%s</span>
                   <span class=\"tree-text\">%s</span>
                   </div>""" % (self.label, self.text)
+
+    def _to_json_pre(self):
+        m = dict(self.metadata)
+        m.update({"TEXT": self.text})
+        return {"label": self.label,
+                "metadata": m}
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -211,7 +297,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     def __str__(self, indent=0):
         idxstr = _index_string_for_metadata(self.metadata)
         s = "(%s%s " % (self.label, idxstr)
-        id = self.metadata.get("ID")
+        id = self.metadata.id
         if id is not None:
             s = "( " + s
         l = len(s)
@@ -221,7 +307,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
             if id == ABSENT_ID:
                 leaves += ")"
             else:
-                leaves += ")\n  (ID %s)" % self.metadata.get("ID")
+                leaves += ")\n  (ID %s)" % self.metadata.id
         return "".join([s, leaves, ")"])
 
     def _repr_html_(self):
@@ -230,6 +316,11 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                   %s
                   </div>""" % (self.label,
                                "".join(map(lambda x: x._repr_html_(), self)))
+
+    def _to_json_pre(self):
+        return {"label": self.label,
+                "metadata": dict(self.metadata),
+                "children": [c._to_json_pre() for c in self]}
 
 
 class ParseError(Exception):
@@ -272,7 +363,7 @@ def _postprocess_parsed(l):
             pass
         try:
             r = _postprocess_parsed(tree)
-            r.metadata["ID"] = id or ABSENT_ID
+            r.metadata.id = id or ABSENT_ID
             return r
         except ParseError as e:
             print("error in id: %s" % id)
