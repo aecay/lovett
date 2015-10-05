@@ -80,7 +80,8 @@ class Loader(object):
             for tree_string in contents.split("\n\n"):
                 tree_obj = tree.parse(tree_string)
                 if tree_obj is not None:
-                    tree_obj.metadata["FILE"] = file
+                    tree_obj.metadata.file = file
+                    # TODO: file-level metadata
                     c.append(tree_obj)
         return c
 
