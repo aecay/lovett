@@ -363,6 +363,10 @@ def _postprocess_parsed(l):
             pass
         try:
             r = _postprocess_parsed(tree)
+            # TODO: We should instead insert a hash-based id.
+            # TODO: think about the differece between id and fingerprint (for
+            # backwards compatibility: fingerprint is the hash-based one,
+            # which is better)
             r.metadata.id = id or ABSENT_ID
             return r
         except ParseError as e:
