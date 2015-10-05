@@ -1,3 +1,5 @@
+#+title: Lovett
+
 # TODO: doc landing page
 
 * Lovett in a nutshell
@@ -19,3 +21,15 @@ Lovett is developed with the following goals in mind:
    - Provide an environment for the design of corpus-based teaching and learning programs
 
 It is anticipated that Lovett will interact with the Annotald tool, and efforts to create a Javascript-based ecosystem for the representation, manipulation, and editing of treebanks.
+
+* This documentation
+
+#+begin_rst
+.. toctree::
+   :maxdepth: 2
+
+   about
+   example-usage
+   indexing
+   api/modules
+#+end_rst
