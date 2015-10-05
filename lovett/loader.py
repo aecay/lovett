@@ -1,9 +1,12 @@
-"""Methods to fetch corpora from the web, filesystem, or other sources.
+"""
+Methods to fetch corpora from the web, filesystem, or other sources.
 
 Currently includes:
 
 * A loader for local files (TODO)
-* A loader for files from `IcePaHC <http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)>`_"""
+* A loader for files from `IcePaHC <http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)>`_
+
+"""
 
 import requests
 from github.MainClass import Github
