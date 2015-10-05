@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import unittest
 import textwrap
+import json
 from nose.plugins.skip import SkipTest
 
 import lovett.tree as T
@@ -68,7 +69,7 @@ class NonTerminalTest(unittest.TestCase):
     def test_parse_1(self):
         t = T.parse("( (ID foo) (IP (NP (PRO it)) (VBP works)))")
         self.assertIsInstance(t, T.NonTerminal)
-        self.assertEqual(t.metadata["ID"], 'foo')
+        self.assertEqual(t.metadata.id, 'foo')
         self.assertEqual(t, NT("IP", [NT("NP", [L("PRO", "it")]), L("VBP", "works")], {"ID": "foo"}))
 
     def test_str(self):
@@ -102,7 +103,7 @@ class NonTerminalTest(unittest.TestCase):
         t2 = T.parse("""( (ID foo)(IP (NP (D I)) (VBP love)
         (NP (NPR Python) (NPR programming))))""")
         # Test that the order of the ID node doesn't matter to parsing
-        self.assertEqual(t2.metadata["ID"], "foo")
+        self.assertEqual(t2.metadata.id, "foo")
         self.assertEqual(t, t2)
         self.assertEqual(s, str(t2))
 
@@ -110,6 +111,9 @@ class NonTerminalTest(unittest.TestCase):
         t = T.parse("(NP (N foo))")
         t2 = T.parse("(NP (N foo))")
         self.assertEqual(t, t2)
+
+    def test_to_json(self):
+        self.assertTrue(False)
 
 
 class LeafTest(unittest.TestCase):
@@ -127,7 +131,7 @@ class LeafTest(unittest.TestCase):
     def test_str_lemma(self):
         raise SkipTest
         l = L("FOO", "bar")
-        l.metadata['LEMMA'] = "baz"
+        l.metadata.lemma = "baz"
         self.assertStr(l, "(FOO bar-baz)")
 
     def test_str_trace(self):
@@ -142,3 +146,9 @@ class LeafTest(unittest.TestCase):
         # TODO: woefully incomplete
         tree = "( (IP-MAT (X *T*) (X FOO) (X *con*) (XP (X bar) (X BAZ) (. .)) (CODE dddd)))"
         self.assertEqual(T.parse(tree).urtext, "FOO bar BAZ.")
+
+    def test_to_json(self):
+        l = L("FOO", "bar")
+        self.assertEqual(l.to_json(),
+                         json.dumps({"label": "FOO", "metadata": {"TEXT": "bar"}}))
+        self.assertIsNone(l.metadata.text)

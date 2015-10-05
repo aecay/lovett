@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import unittest
+import sqlalchemy
 # import textwrap
 # from nose.plugins.skip import SkipTest
 
@@ -18,17 +19,11 @@ class CorpusTest(unittest.TestCase):
         # raise Exception(cls.d.conn.cursor().execute("SELECT * FROM nodes").fetchall())
         # raise Exception(fetch_all(cls.d, "SELECT * FROM nodes"))
 
-    def fetch(self, query, args=None):
-        if args is not None:
-            return self.d.conn.cursor().execute(query, args).fetchone()[0]
-        else:
-            return self.d.conn.cursor().execute(query).fetchone()[0]
+    def fetch(self, query, **kwargs):
+        return self.d.engine.connect().execute(sqlalchemy.sql.text(query), **kwargs).fetchone()[0]
 
-    def fetch_all(self, query, args=None):
-        if args is not None:
-            return self.d.conn.cursor().execute(query, args).fetchall()
-        else:
-            return self.d.conn.cursor().execute(query).fetchall()
+    def fetch_all(self, query, **kwargs):
+        return self.d.engine.connect().execute(sqlalchemy.sql.text(query), **kwargs).fetchall()
 
     def test_basic(self):
         ip = self.fetch("SELECT rowid FROM nodes WHERE label = 'IP'")
@@ -40,16 +35,23 @@ class CorpusTest(unittest.TestCase):
     def test_dom(self):
         ip = self.fetch("SELECT rowid FROM nodes WHERE label = 'IP'")
         nps = self.fetch_all("SELECT rowid FROM nodes WHERE label = 'NP'")
-        dom = self.fetch("SELECT depth FROM dom WHERE parent = ? AND child = ?",
-                         (ip, nps[0][0]))
+        dom = self.fetch("SELECT depth FROM dom WHERE parent = :parent AND child = :child",
+                         parent=ip,
+                         child=nps[0][0])
         assert dom == 1
-        dom = self.fetch("SELECT depth FROM dom WHERE parent = ? AND child = ?",
-                         (ip, nps[1][0]))
+        dom = self.fetch("SELECT depth FROM dom WHERE parent = :parent AND child = :child",
+                         parent=ip,
+                         child=nps[1][0])
         assert dom == 1
 
     def test_sprec(self):
         adj = self.fetch("SELECT rowid FROM nodes WHERE label = 'ADJ'")
         nn = self.fetch("SELECT rowid FROM nodes WHERE label = 'N+N'")
-        sprec = self.fetch("SELECT distance FROM sprec WHERE left = ? AND right = ?",
-                           (adj, nn))
+        sprec = self.fetch("SELECT distance FROM sprec WHERE left = :left AND right = :right",
+                           left=adj,
+                           right=nn)
         assert sprec == 1
+
+    def test_reconstitute(self):
+        t = T.parse("(IP (NP (D a) (N dog)) (VBD chased) (NP (D the) (ADJ speedy) (N+N mailman)))")
+        self.assertEqual(self.d[0], t)
