@@ -1,3 +1,5 @@
+from hashlib import md5
+
 import lovett.util as util
 
 
@@ -36,3 +38,18 @@ def icepahc_lemma(tree):
         if len(parts) > 1:
             tree.text = "-".join(parts[:-1])
             tree.metadata["LEMMA"] = parts[-1]
+
+
+def icepahc_year(tree):
+    """Add year metadata to a tree from IcePaHC.
+
+    This function assumes that the tree's file is already present in its
+    metadata, and that the file name begins with a four-digit year.
+
+    """
+    tree.metadata.year = int(tree.metadata.file[0:4])
+
+
+def ensure_id(tree):
+    if tree.id is None:
+        tree.root.metadata.id = md5.new().update(tree.root.urtext).hexdigest()
