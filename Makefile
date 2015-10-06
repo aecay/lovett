@@ -10,7 +10,8 @@ doc-push: doc-html
 	cp doc/conf.py ../lovett-docs/doc-built
 	cd ../lovett-docs; \
 	git fetch --all; \
-	git merge --no-edit master; \
+	git checkout docs; \
+	git merge --no-edit origin/master; \
 	git add doc-built; \
 	git commit -m "Autobuild docs"; \
 	git push
