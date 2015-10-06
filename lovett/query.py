@@ -71,7 +71,7 @@ class QueryFunction(abc.ABC):
                 the query will be evaluated.
 
         Returns:
-            sqlalchemy.sql.expresssion.Select: An expression implementing the query.
+            sqlalchemy.sql.expression.Select: An expression implementing the query.
 
         """
         pass
