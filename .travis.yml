@@ -15,6 +15,13 @@ after_success:
 
 secure: "DUm8EDu6YRlfXk/BoGy7fsTtuMKWyjaMwkjKAKuDq/+vBAouTY163j8xtSqbwEnyW7x1EfUM7S4dbz+e77S6X1pxbf1i+29swk+LvTTNoLo11YqMtm+vZqQD+sCaf5ipq5TMv8Fjcpp1omGAXd3R3W4gMvNztRxGxmjV1wFe1hI="
 
+addons:
+  apt:
+    sources:
+      - ubuntu-elisp
+    packages:
+      - emacs-snapshot
+
 env:
   GH_REF: github.com/aecay/lovett.git
 
