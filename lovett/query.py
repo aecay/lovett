@@ -13,7 +13,7 @@ The second mode is *indexed mode*, accessed via the `QueryFunction.sql`
 instance method.  This method receives an instance of `CorpusDb` as an
 argument, and should return a SQLAlchemy `sqlalchemy.sql.expression.Select`
 object which will match the database ids of the matching nodes.  The function
-can access relevant data as fields of the ``CorpusDb`` object.
+can access relevant sqlalchemy objects as fields of the ``corpus`` argument.
 
 ``QueryFunction`` objects support a variety of combinatorics through
 overloading of python operators.  The following are supported:
