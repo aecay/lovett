@@ -1,0 +1,5 @@
+elpy
+flake8~=2.4
+jedi
+nose~=1.3
+Sphinx~=1.3
