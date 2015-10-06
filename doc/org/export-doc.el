@@ -1,4 +1,4 @@
-(setq debug-on-error t)
+;; (setq debug-on-error t)
 (make-directory "lovett-emacs" t)
 (setq user-emacs-directory "lovett-emacs")
 
