@@ -41,7 +41,7 @@ from sqlalchemy.sql.expression import union, intersect
 # no ordering between bar and baz
 
 
-class QueryFunction(abc.ABC):
+class QueryFunction(metaclass=abc.ABCMeta):
     """Parent for all query functions in the Lovett query language.
 
     This class defines the interface that all query functions are expected to

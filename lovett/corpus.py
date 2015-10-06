@@ -9,7 +9,7 @@ import lovett.tree
 # - smart iteration: with corpus.trees() as trees: trees.map(...), trees.filter(...)
 
 
-class CorpusBase(abc.ABC, collections.abc.Sequence):
+class CorpusBase(collections.abc.Sequence, metacalss=abc.ABCMeta):
     # TODO
     # @abc.abstractmethod
     # def matching_trees(query):
