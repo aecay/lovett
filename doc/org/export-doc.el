@@ -1,11 +1,22 @@
+(setq debug-on-error t)
+(make-directory "/tmp/lovett-emacs"t )
+(setq user-emacs-directory "/tmp/lovett-emacs")
+
 (require 'package)
-(setq package-archives '(("org" . "http://orgmode.org/elpa/")
+(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
+(setq package-user-dir (locate-user-emacs-file "elpa"))
+(package-initialize)
+(package-refresh-contents nil)
 
-(package-install "org")
-(package-install "ox-rst")
+(defun package--compile (&rest _)
+  nil)
 
-(require 'org)
+(ignore-errors
+  ;; Emacs bug #21625
+  (package-install 'org)
+  (package-install 'ox-rst))
+
 (require 'ox-publish)
 (require 'ox-rst)
 
@@ -44,7 +55,7 @@ holding export options."
       (org-rst-format-inlinetask-function #'lovett-format-inlinetask))
   (org-publish `("lovett-docs"
                  :base-directory ,dir
-                 :publishing-directory ,(expand-file-name (concat dir "../"))
+                 :publishing-directory ,(expand-file-name (concat dir "../build/"))
                  :publishing-function org-rst-publish-to-rst
                  :author "Aaron Ecay"
                  :exclude-tags ("noexport")
