@@ -1,0 +1,576 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lovett.query module &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="Lovett  documentation" href="../index.html" />
+    <link rel="up" title="lovett package" href="lovett.html" />
+    <link rel="next" title="lovett.transform module" href="lovett.transform.html" />
+    <link rel="prev" title="lovett.loader module" href="lovett.loader.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-lovett.query">
+<span id="lovett-query-module"></span><h1>lovett.query module<a class="headerlink" href="#module-lovett.query" title="Permalink to this headline">¶</a></h1>
+<p>This module contains the Lovett query language.</p>
+<p>Query functions are defined as classes which inherit from <a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><code class="xref any py py-class docutils literal"><span class="pre">QueryFunction</span></code></a>.
+Each query function must operate in two modes.  These functions are not
+accessed directly, but rather through the <code class="xref any docutils literal"><span class="pre">matching_trees</span></code>
+method of <a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus"><code class="xref any py py-class docutils literal"><span class="pre">Corpus</span></code></a> objects (which dispatches to the appropriate mode).</p>
+<p>The first mode is <em>direct mode</em>, which is accessed through the
+<a class="reference internal" href="#lovett.query.QueryFunction.match_tree" title="lovett.query.QueryFunction.match_tree"><code class="xref any py py-meth docutils literal"><span class="pre">QueryFunction.match_tree</span></code></a> function.  This function receives as an argument a
+<a class="reference internal" href="lovett.tree.html#lovett.tree.Tree" title="lovett.tree.Tree"><code class="xref any py py-class docutils literal"><span class="pre">Tree</span></code></a> object, and should return <code class="docutils literal"><span class="pre">True</span></code> if the tree matches the query.</p>
+<p>The second mode is <em>indexed mode</em>, accessed via the <a class="reference internal" href="#lovett.query.QueryFunction.sql" title="lovett.query.QueryFunction.sql"><code class="xref any py py-meth docutils literal"><span class="pre">QueryFunction.sql</span></code></a>
+instance method.  This method receives an instance of <a class="reference internal" href="lovett.db.html#lovett.db.CorpusDb" title="lovett.db.CorpusDb"><code class="xref any py py-class docutils literal"><span class="pre">CorpusDb</span></code></a> as an
+argument, and should return a SQLAlchemy <a class="reference external" href="http://docs.sqlalchemy.org/en/rel_1_0/core/selectable.html#sqlalchemy.sql.expression.Select" title="(in SQLAlchemy v1.0)"><code class="xref any docutils literal"><span class="pre">sqlalchemy.sql.expression.Select</span></code></a>
+object which will match the database ids of the matching nodes.  The function
+can access relevant sqlalchemy objects as fields of the <code class="docutils literal"><span class="pre">corpus</span></code> argument.</p>
+<p><code class="docutils literal"><span class="pre">QueryFunction</span></code> objects support a variety of combinatorics through
+overloading of python operators.  The following are supported:</p>
+<ul class="simple">
+<li>conjunction via the <code class="docutils literal"><span class="pre">&amp;</span></code> operator</li>
+<li>disjunction via the <code class="docutils literal"><span class="pre">|</span></code> operator</li>
+<li>negation via the <code class="docutils literal"><span class="pre">~</span></code> operator</li>
+<li>(TODO) <code class="docutils literal"><span class="pre">^</span></code> for dominance, <code class="docutils literal"><span class="pre">&gt;</span></code> for precedence</li>
+</ul>
+<p>Because the operator precedence rules can sometimes be unexpected (the boolean
+operators are originally for bitwise arithmetic in Python, for example),
+careful attention to parenthesization is needed.</p>
+<dl class="class">
+<dt id="lovett.query.QueryFunction">
+<em class="property">class </em><code class="descname">QueryFunction</code><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parent for all query functions in the Lovett query language.</p>
+<p>This class defines the interface that all query functions are expected to
+obey.</p>
+<dl class="method">
+<dt id="lovett.query.QueryFunction.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">True</span></code> if a tree matches this query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tree</strong> (<a class="reference internal" href="lovett.tree.html#lovett.tree.Tree" title="lovett.tree.Tree"><code class="xref any py py-class docutils literal"><span class="pre">lovett.tree.Tree</span></code></a>) &#8211; The tree to match against.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True iff this query matches the tree argument.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/functions.html#bool" title="(in Python v3.5)">bool</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.QueryFunction.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.sql" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a SQLAlchemy select implementing the query.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>corpus</strong> (<a class="reference internal" href="lovett.db.html#lovett.db.CorpusDb" title="lovett.db.CorpusDb"><em>CorpusDb</em></a>) &#8211; The corpus against which
+the query will be evaluated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An expression implementing the query.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.sqlalchemy.org/en/rel_1_0/core/selectable.html#sqlalchemy.sql.expression.Select" title="(in SQLAlchemy v1.0)">sqlalchemy.sql.expression.Select</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.QueryFunction.__and__">
+<code class="descname">__and__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.__and__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.__and__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conjunction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><em>QueryFunction</em></a>) &#8211; the second query.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the conjunctuion of the two queries.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction">QueryFunction</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.QueryFunction.__or__">
+<code class="descname">__or__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.__or__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.__or__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disjunction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><em>QueryFunction</em></a>) &#8211; the second query.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the disjunctuion of the two queries.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction">QueryFunction</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.QueryFunction.__invert__">
+<code class="descname">__invert__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.__invert__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.__invert__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Negation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the negation of the query.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction">QueryFunction</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.QueryFunction.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#QueryFunction.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.QueryFunction.__str__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the string representation of this query.</p>
+<p>It should be capable of being read by the python interpreter to
+reconstitute the QueryFunction object.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.And">
+<em class="property">class </em><code class="descname">And</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#And"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.And" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements conjunction of query functions.</p>
+<dl class="method">
+<dt id="lovett.query.And.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#And.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.And.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.And.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#And.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.And.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.And.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#And.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.And.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.And.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#And.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.And.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.Or">
+<em class="property">class </em><code class="descname">Or</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Or"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Or" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements disjunction of query functions.</p>
+<dl class="method">
+<dt id="lovett.query.Or.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>left</em>, <em>right</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Or.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Or.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Or.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Or.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Or.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Or.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Or.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Or.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Or.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Or.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Or.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.Not">
+<em class="property">class </em><code class="descname">Not</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Not"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Not" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements negation of query functions.</p>
+<dl class="method">
+<dt id="lovett.query.Not.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>fn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Not.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Not.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Not.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Not.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Not.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Not.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Not.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Not.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.Not.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#Not.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.Not.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.WrapperQueryFunction">
+<em class="property">class </em><code class="descname">WrapperQueryFunction</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#WrapperQueryFunction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.WrapperQueryFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements common functionality for queries which wrap another
+query.</p>
+<dl class="attribute">
+<dt id="lovett.query.WrapperQueryFunction.name">
+<code class="descname">name</code><a class="headerlink" href="#lovett.query.WrapperQueryFunction.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>the name of this query, for use in the string representation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.WrapperQueryFunction.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#WrapperQueryFunction.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.WrapperQueryFunction.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.WrapperQueryFunction.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#WrapperQueryFunction.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.WrapperQueryFunction.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.idoms">
+<em class="property">class </em><code class="descname">idoms</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#idoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.idoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements immediate-dominance queries.</p>
+<p>This is roughly equivalent to the <code class="docutils literal"><span class="pre">idoms</span></code> function in CorpusSearch.
+Thus the following query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">idoms</span><span class="p">(</span><span class="n">label</span><span class="p">(</span><span class="s">&quot;NP-SBJ&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>is approximately equivalent in CorpusSearch to:</p>
+<div class="highlight-python"><div class="highlight"><pre>___ idoms NP-SBJ
+</pre></div>
+</div>
+<p>The blank in the CorpusSearch query is not specified by Lovett.  It is
+typical to specify this by conjoining another <code class="docutils literal"><span class="pre">label</span></code> invocation:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">label</span><span class="p">(</span><span class="s">&quot;IP-MAT&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">idoms</span><span class="p">(</span><span class="n">label</span><span class="p">(</span><span class="s">&quot;NP-SBJ&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="lovett.query.idoms.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#idoms.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.idoms.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.idoms.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#idoms.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.idoms.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.idoms.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#idoms.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.idoms.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.doms">
+<em class="property">class </em><code class="descname">doms</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#doms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.doms" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements dominance queries at arbitrary depth.</p>
+<p>Its usage is very similar to that of the <a class="reference internal" href="#lovett.query.idoms" title="lovett.query.idoms"><code class="xref any py py-class docutils literal"><span class="pre">idoms</span></code></a> class, which see.
+Naturally, the analogous CorpusSearch function in this case is <code class="docutils literal"><span class="pre">doms</span></code>
+and not <code class="docutils literal"><span class="pre">idoms</span></code>.</p>
+<dl class="method">
+<dt id="lovett.query.doms.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#doms.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.doms.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.doms.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em>, <em>_nested=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#doms.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.doms.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.doms.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#doms.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.doms.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.label">
+<em class="property">class </em><code class="descname">label</code><span class="sig-paren">(</span><em>label</em>, <em>exact=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#label"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements matching tree node labels.</p>
+<p>The <code class="docutils literal"><span class="pre">label</span></code> slot (and argument to the initializer function) provides
+several ways of specifying the label to match.  If label is a string, it
+will be matched as either the entire label, or a prefix of the label
+followed by one or more trailing dashtags.  The default matching behavior
+for <code class="docutils literal"><span class="pre">label(&quot;NP&quot;)</span></code> is as follows:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="43%" />
+<col width="57%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">string</th>
+<th class="head">matches?</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>NP</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>NP-SBJ</td>
+<td>yes</td>
+</tr>
+<tr class="row-even"><td>NPX</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The argument <code class="docutils literal"><span class="pre">exact</span></code> can be used to require exact matching, which
+changes the matching behavior to the following:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="43%" />
+<col width="57%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">string</th>
+<th class="head">matches?</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>NP</td>
+<td>yes</td>
+</tr>
+<tr class="row-odd"><td>NP-SBJ</td>
+<td>no</td>
+</tr>
+<tr class="row-even"><td>NPX</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The bias towards prefix matching is intentional &#8211; the indexed query
+engine can implement prefix searches in a fast way, whereas non-prefix
+matches are slower.  In cases where you need a non-prefix match, you
+should look at whether the other label matching functions are a better
+fit.  (Currently this encompasses only <a class="reference internal" href="#lovett.query.dash_tag" title="lovett.query.dash_tag"><code class="xref any py py-class docutils literal"><span class="pre">dash_tag</span></code></a>).</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p>It would probably be a good idea to add more label matching functions
+with optimized SQL implementations.  What would be good candidates?
+One idea would be to allow this function to take a set of strings as an
+argument, and match whether the label is a member of the set.  This
+could then be turned into a massive disjunction in SQL, which is
+(probably) not too slow.  This would also allow the set to be generated
+programmatically in python, like this example common in Old English
+queries:</p>
+<div class="last highlight-python"><div class="highlight"><pre><span class="n">conjugations</span> <span class="o">=</span> <span class="p">[</span><span class="n">tense</span> <span class="o">+</span> <span class="n">mood</span> <span class="k">for</span> <span class="n">tense</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;P&quot;</span><span class="p">,</span> <span class="s">&quot;D&quot;</span><span class="p">)</span>
+                             <span class="k">for</span> <span class="n">mood</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span><span class="s">&quot;I&quot;</span><span class="p">,</span><span class="s">&quot;S&quot;</span><span class="p">)]</span>
+<span class="n">conjugations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;I&quot;</span><span class="p">)</span>  <span class="c">## imperative</span>
+<span class="n">conjugations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>   <span class="c">## infinitive -- if not restricted to tensed vbs</span>
+<span class="n">verbs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">type</span> <span class="o">+</span> <span class="n">conjugation</span> <span class="k">for</span> <span class="nb">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;VB&quot;</span><span class="p">,</span><span class="s">&quot;MD&quot;</span><span class="p">,</span><span class="s">&quot;HV&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">conjugation</span> <span class="ow">in</span> <span class="n">conjugations</span><span class="p">]</span>
+<span class="n">all_verbs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;NEG+&quot;</span><span class="p">,</span> <span class="s">&quot;RP+&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">verbs</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">label</span></code> argument can also be a regular expression object (or indeed
+any object with a <code class="docutils literal"><span class="pre">search</span></code> method).  In this case, the regular
+expression is matched against the label.  In this case the <code class="docutils literal"><span class="pre">exact</span></code>
+parameter is ignored.</p>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p>Indexed mode operation</p>
+<p class="last">Note that regular expression matching is not yet implemented in indexed
+(SQL) mode.  It might be possible to implement this, but it will be
+slow.  It is better to use one of the specialized label matching
+functions.  If you find a common use case for which a label matching
+function does not exist, please open an issue report.  (TODO: link to
+github issues page)</p>
+</div>
+<dl class="attribute">
+<dt id="lovett.query.label.label">
+<code class="descname">label</code><a class="headerlink" href="#lovett.query.label.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>the label to match</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.query.label.exact">
+<code class="descname">exact</code><a class="headerlink" href="#lovett.query.label.exact" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em></p>
+<p>whether to require an exact match; otherwise
+prefix matching is allowed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.label.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>label</em>, <em>exact=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#label.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.label.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>label</strong> &#8211; the label to match; see the class docstring for details</li>
+<li><strong>exact</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; whether to require an exact match</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.label.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#label.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.label.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.label.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#label.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.label.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.label.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#label.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.label.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.dash_tag">
+<em class="property">class </em><code class="descname">dash_tag</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#dash_tag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.dash_tag" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements matching a dash tag against a node label.</p>
+<p>The dash tag can either be in the middle of the label as in <code class="docutils literal"><span class="pre">*-TAG-*</span></code> or
+at the end as in <code class="docutils literal"><span class="pre">*-TAG</span></code>, where <code class="docutils literal"><span class="pre">*</span></code> represents an arbitrary
+(non-empty) string.  Does not support the matching of partial dash tags,
+i.e. the use of <code class="docutils literal"><span class="pre">dash_tag(&quot;FOO&quot;)</span></code> to match <code class="docutils literal"><span class="pre">XP-FOOBAR</span></code>.</p>
+<dl class="attribute">
+<dt id="lovett.query.dash_tag.tag">
+<code class="descname">tag</code><a class="headerlink" href="#lovett.query.dash_tag.tag" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>the dash tag to search for.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.dash_tag.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>tag</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#dash_tag.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.dash_tag.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.dash_tag.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#dash_tag.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.dash_tag.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.dash_tag.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#dash_tag.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.dash_tag.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.sprec">
+<em class="property">class </em><code class="descname">sprec</code><a class="reference internal" href="../_modules/lovett/query.html#sprec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">lovett</a><ul>
+  <li><a href="lovett.html">lovett package</a><ul>
+      <li>Previous: <a href="lovett.loader.html" title="previous chapter">lovett.loader module</a></li>
+      <li>Next: <a href="lovett.transform.html" title="next chapter">lovett.transform module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/lovett.query.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="../_sources/api/lovett.query.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

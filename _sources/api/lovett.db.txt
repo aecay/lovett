@@ -1,0 +1,7 @@
+lovett.db module
+================
+
+.. automodule:: lovett.db
+    :members:
+    :undoc-members:
+    :private-members:

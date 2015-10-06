@@ -1,0 +1,8 @@
+============
+About Lovett
+============
+
+    :Author: Aaron Ecay
+
+
+Todo: writeme

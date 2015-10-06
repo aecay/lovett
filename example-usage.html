@@ -1,0 +1,216 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Example usage &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="top" title="Lovett  documentation" href="index.html" />
+    <link rel="next" title="Indexing" href="indexing.html" />
+    <link rel="prev" title="About Lovett" href="about.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="example-usage">
+<h1>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Aaron Ecay</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The aim of this document is to walk through typical use cases of Lovett.
+It assumes that you have successfully installed Lovett following the installation directions given elsewhere in this documentation.</p>
+<div class="section" id="what-is-lovett-for">
+<h3>What is Lovett for?<a class="headerlink" href="#what-is-lovett-for" title="Permalink to this headline">¶</a></h3>
+<p>The extensional definition of Lovett is given elsewhere in the documentation.</p>
+<p>The aim of this section is rather to explain why Lovett exists, and what it will enable you to do.
+Lovett transforms corpora into programmatic data structures.
+This encourages you to think of parse trees not as static pieces of data, but as dynamic objects.
+Unlike in botany, the extraction of data from these trees is not an exercise of slogging through the forest counting trunks and leaves.
+All the counting is already contained in the parse itself (and someone already did a lot of slogging to make it available to you).
+Extracting interesting data from a parsed corpus is much more like programming: creating instructions so that a computer will perform a task for you.</p>
+<p>Existing infrastructure (primarily <a class="reference external" href="http://corpussearch.sourceforge.net/">CorpusSearch</a>) does not fit this model of corpus research well.
+CorpusSearch basically does one thing: search for a structure in the corpus.
+It provides one very simple iteration operation: the coding query, which executes several searches sequentially.
+It also provides one device for eliminating redundancy: definitions files, which can compress long search terms into shorter ones (but are limited to a single argument of one of CS’s search functions).
+Finally, CS is difficult to interact with, since it requires a fair amount of boilerplate repetition, insists on accessing its inputs and outputs in particular locations in the file system, and is run from the system shell.
+The cumulative effect of these aspects of CS is to obscure the relationship between corpus data and computer programming.</p>
+<p>A fully fledged programming language, on the other hand, provides a variety of iteration constructs, and a variety of combinatory strategies for eliminating redundancy.
+By embedding corpus data in such an environment, Lovett brings the following advantages:</p>
+<ul class="simple">
+<li>Ease of use.
+For users accustomed to programming, using Lovett should be easy to understand.
+Programming novices can avail themselves of the multitudinarious resources for learning programming (and python in particular).
+The skills they gain will thus be more transferable.</li>
+<li>Ease of understanding.
+Because programs written with Lovett can take advantage of appropriate programming constructs, they will be easier to understand.
+This means that linguists can share their corpus analyses more easily.</li>
+<li>Ease of integration.
+By picking python as the target language, Lovett can integrate with a wide variety of existing libraries for statistical analysis, text processing, data visualization, and other tasks.</li>
+</ul>
+<p>Corpus creation projects have made heavy use of CorpusSearch’s other feature – revision queries.
+Lovett brings benefits to this use as well.
+Even more than data extraction, transforming a corpus by means of rules is a programmatic task – indeed a kind of rule-based parsing.
+Using a fully-developed programming language will allow the logic of this parsing to be expressed perspicuously – and indeed will aid in its development as well.</p>
+</div>
+</div>
+<div class="section" id="loaders">
+<h2>Loaders<a class="headerlink" href="#loaders" title="Permalink to this headline">¶</a></h2>
+<p>The first task of an analyst is to load corpus data into Lovett.  Loaders are provided for this purpose in the <code class="docutils literal"><span class="pre">lovett.loaders</span></code> module for this purpose.  There are two kinds:</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">FileLoader</span></code></dt>
+<dd>This class implements loading from files on disk.  It will be the most commonly used loader</dd>
+<dt><code class="docutils literal"><span class="pre">GithubLoader</span></code></dt>
+<dd>This class implements loading corpus files from a repository hosted on github.
+It can be used to quickly disseminate code for an analysis of public data to a large group (for example students in a class) without requiring that they individually download the data.</dd>
+</dl>
+<p>The <code class="docutils literal"><span class="pre">loaders</span></code> module also provides loaders for the following publicly available corpora:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)">IcePaHC</a></li>
+</ul>
+<p>For this example, we’ll create a loader which targets a single file hosted in the Lovett source code repository (a parsed version of TODO)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">lovett.loader</span>
+<span class="n">my_loader</span> <span class="o">=</span> <span class="n">lovett</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">GithubLoader</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="s">&quot;antonkarl&quot;</span><span class="p">,</span>
+                                       <span class="n">repo</span><span class="o">=</span><span class="s">&quot;icecorpus&quot;</span><span class="p">,</span>
+                                       <span class="n">directory</span><span class="o">=</span><span class="s">&quot;finished/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can find out which files are contained in this corpus:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_loader</span><span class="o">.</span><span class="n">files</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>[&#39;1150.firstgrammar.sci-lin.psd&#39;, &#39;1150.homiliubok.rel-ser.psd&#39;, &#39;1210.jartein.rel-sag.psd&#39;, &#39;1210.thorlakur.rel-sag.psd&#39;, &#39;1250.sturlunga.nar-sag.psd&#39;]
+</pre></div>
+</div>
+<p>We can also get the contents of a file by name:<a class="footnote-reference" href="#id2" id="id1">[1]</a></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_loader</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="s">&quot;1150.firstgrammar.sci-lin.psd&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">100</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre>( (IP-MAT (PP (P Í-í)
+              (NP (QS-D flestum-margur) (NS-D löndum-land)))
+          (VBPI setja-setja)
+</pre></div>
+</div>
+<p>The final functionality which a loader provides is to transform the files it accesses into a <code class="docutils literal"><span class="pre">Corpus</span></code> object.
+By default, all available files will be included.
+If you want a <code class="docutils literal"><span class="pre">Corpus</span></code> containing trees from just a single file, or set of files, you can pass a string or list to the <code class="docutils literal"><span class="pre">corpus</span></code> function.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">my_corpus</span> <span class="o">=</span> <span class="n">my_loader</span><span class="o">.</span><span class="n">corpus</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Details about the file formats that Lovett understands are presented elsewhere in the documentation.</p>
+</div>
+<div class="section" id="corpus-objects">
+<h2>Corpus objects<a class="headerlink" href="#corpus-objects" title="Permalink to this headline">¶</a></h2>
+<p>...</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>Here we are displaying just the first 100 characters of the file, to avoid cluttering the document with a very long output.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Example usage</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#what-is-lovett-for">What is Lovett for?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#loaders">Loaders</a></li>
+<li><a class="reference internal" href="#corpus-objects">Corpus objects</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="about.html" title="previous chapter">About Lovett</a></li>
+      <li>Next: <a href="indexing.html" title="next chapter">Indexing</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/example-usage.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/example-usage.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

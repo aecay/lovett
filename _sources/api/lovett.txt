@@ -1,0 +1,25 @@
+lovett package
+==============
+
+Submodules
+----------
+
+.. toctree::
+
+   lovett.compat
+   lovett.corpus
+   lovett.db
+   lovett.ilovett
+   lovett.loader
+   lovett.query
+   lovett.transform
+   lovett.tree
+   lovett.util
+
+Module contents
+---------------
+
+.. automodule:: lovett
+    :members:
+    :undoc-members:
+    :private-members:

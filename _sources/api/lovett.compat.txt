@@ -1,0 +1,7 @@
+lovett.compat module
+====================
+
+.. automodule:: lovett.compat
+    :members:
+    :undoc-members:
+    :private-members:

@@ -1,0 +1,440 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lovett.tree module &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="Lovett  documentation" href="../index.html" />
+    <link rel="up" title="lovett package" href="lovett.html" />
+    <link rel="next" title="lovett.util module" href="lovett.util.html" />
+    <link rel="prev" title="lovett.transform module" href="lovett.transform.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-lovett.tree">
+<span id="lovett-tree-module"></span><h1>lovett.tree module<a class="headerlink" href="#module-lovett.tree" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="lovett.tree._check_metadata_name">
+<code class="descname">_check_metadata_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#_check_metadata_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree._check_metadata_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lovett.tree.Metadata">
+<em class="property">class </em><code class="descname">Metadata</code><span class="sig-paren">(</span><em>dic</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="lovett.tree.Metadata.__slots__">
+<code class="descname">__slots__</code><em class="property"> = ('_dict',)</em><a class="headerlink" href="#lovett.tree.Metadata.__slots__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>dic</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Metadata._dict">
+<code class="descname">_dict</code><a class="headerlink" href="#lovett.tree.Metadata._dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__setitem__">
+<code class="descname">__setitem__</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__setitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__delitem__">
+<code class="descname">__delitem__</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__delitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__delitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__iter__">
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__len__">
+<code class="descname">__len__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__len__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__len__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__getattr__">
+<code class="descname">__getattr__</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__getattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__setattr__">
+<code class="descname">__setattr__</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__setattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__setattr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Metadata.__delattr__">
+<code class="descname">__delattr__</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Metadata.__delattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Metadata.__delattr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.tree.Tree">
+<em class="property">class </em><code class="descname">Tree</code><span class="sig-paren">(</span><em>label</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="lovett.tree.Tree.__slots__">
+<code class="descname">__slots__</code><em class="property"> = ['parent', 'metadata', '_label']</em><a class="headerlink" href="#lovett.tree.Tree.__slots__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>label</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.parent">
+<code class="descname">parent</code><a class="headerlink" href="#lovett.tree.Tree.parent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.metadata">
+<code class="descname">metadata</code><a class="headerlink" href="#lovett.tree.Tree.metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree._label">
+<code class="descname">_label</code><a class="headerlink" href="#lovett.tree.Tree._label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree.__eq__">
+<code class="descname">__eq__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree.__eq__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree.__repr__">
+<code class="descname">__repr__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree.__repr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree.__repr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree._repr_html_">
+<code class="descname">_repr_html_</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree._repr_html_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree._repr_html_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree._to_json_pre">
+<code class="descname">_to_json_pre</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree._to_json_pre"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree._to_json_pre" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Tree.to_json">
+<code class="descname">to_json</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Tree.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Tree.to_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.label">
+<code class="descname">label</code><a class="headerlink" href="#lovett.tree.Tree.label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree._parent_index">
+<code class="descname">_parent_index</code><a class="headerlink" href="#lovett.tree.Tree._parent_index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.left_sibling">
+<code class="descname">left_sibling</code><a class="headerlink" href="#lovett.tree.Tree.left_sibling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.right_sibling">
+<code class="descname">right_sibling</code><a class="headerlink" href="#lovett.tree.Tree.right_sibling" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.root">
+<code class="descname">root</code><a class="headerlink" href="#lovett.tree.Tree.root" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.urtext">
+<code class="descname">urtext</code><a class="headerlink" href="#lovett.tree.Tree.urtext" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.id">
+<code class="descname">id</code><a class="headerlink" href="#lovett.tree.Tree.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Tree.__hash__">
+<code class="descname">__hash__</code><em class="property"> = None</em><a class="headerlink" href="#lovett.tree.Tree.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lovett.tree._index_string_for_metadata">
+<code class="descname">_index_string_for_metadata</code><span class="sig-paren">(</span><em>metadata</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#_index_string_for_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree._index_string_for_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lovett.tree.Leaf">
+<em class="property">class </em><code class="descname">Leaf</code><span class="sig-paren">(</span><em>label</em>, <em>text</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="lovett.tree.Leaf.__slots__">
+<code class="descname">__slots__</code><em class="property"> = ['text']</em><a class="headerlink" href="#lovett.tree.Leaf.__slots__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>label</em>, <em>text</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Leaf.text">
+<code class="descname">text</code><a class="headerlink" href="#lovett.tree.Leaf.text" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><em>indent=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf.__repr__">
+<code class="descname">__repr__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf.__repr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf.__repr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf.__eq__">
+<code class="descname">__eq__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf.__eq__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Leaf.urtext">
+<code class="descname">urtext</code><a class="headerlink" href="#lovett.tree.Leaf.urtext" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf._repr_html_">
+<code class="descname">_repr_html_</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf._repr_html_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf._repr_html_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.Leaf._to_json_pre">
+<code class="descname">_to_json_pre</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#Leaf._to_json_pre"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.Leaf._to_json_pre" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.Leaf.__hash__">
+<code class="descname">__hash__</code><em class="property"> = None</em><a class="headerlink" href="#lovett.tree.Leaf.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.tree.NonTerminal">
+<em class="property">class </em><code class="descname">NonTerminal</code><span class="sig-paren">(</span><em>label</em>, <em>children</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="attribute">
+<dt id="lovett.tree.NonTerminal.__slots__">
+<code class="descname">__slots__</code><em class="property"> = ['_children']</em><a class="headerlink" href="#lovett.tree.NonTerminal.__slots__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>label</em>, <em>children</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.NonTerminal._children">
+<code class="descname">_children</code><a class="headerlink" href="#lovett.tree.NonTerminal._children" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__eq__">
+<code class="descname">__eq__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__eq__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__eq__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__contains__">
+<code class="descname">__contains__</code><span class="sig-paren">(</span><em>obj</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__contains__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__contains__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__iter__">
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__len__">
+<code class="descname">__len__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__len__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__len__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__getitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__setitem__">
+<code class="descname">__setitem__</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__setitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__setitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__delitem__">
+<code class="descname">__delitem__</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__delitem__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__delitem__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.insert">
+<code class="descname">insert</code><span class="sig-paren">(</span><em>index</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.insert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.NonTerminal.children">
+<code class="descname">children</code><a class="headerlink" href="#lovett.tree.NonTerminal.children" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__repr__">
+<code class="descname">__repr__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__repr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__repr__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><em>indent=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal._repr_html_">
+<code class="descname">_repr_html_</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal._repr_html_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal._repr_html_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.tree.NonTerminal._to_json_pre">
+<code class="descname">_to_json_pre</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#NonTerminal._to_json_pre"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.NonTerminal._to_json_pre" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lovett.tree.NonTerminal.__hash__">
+<code class="descname">__hash__</code><em class="property"> = None</em><a class="headerlink" href="#lovett.tree.NonTerminal.__hash__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="lovett.tree.ParseError">
+<em class="property">exception </em><code class="descname">ParseError</code><a class="reference internal" href="../_modules/lovett/tree.html#ParseError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.ParseError" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lovett.tree._tokenize">
+<code class="descname">_tokenize</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#_tokenize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree._tokenize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lovett.tree._postprocess_parsed">
+<code class="descname">_postprocess_parsed</code><span class="sig-paren">(</span><em>l</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#_postprocess_parsed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree._postprocess_parsed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lovett.tree.parse">
+<code class="descname">parse</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/tree.html#parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.tree.parse" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">lovett</a><ul>
+  <li><a href="lovett.html">lovett package</a><ul>
+      <li>Previous: <a href="lovett.transform.html" title="previous chapter">lovett.transform module</a></li>
+      <li>Next: <a href="lovett.util.html" title="next chapter">lovett.util module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/lovett.tree.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="../_sources/api/lovett.tree.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

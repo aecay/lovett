@@ -1,0 +1,503 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lovett.query &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="top" title="Lovett  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for lovett.query</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;This module contains the Lovett query language.</span>
+
+<span class="sd">Query functions are defined as classes which inherit from `QueryFunction`.</span>
+<span class="sd">Each query function must operate in two modes.  These functions are not</span>
+<span class="sd">accessed directly, but rather through the `matching_trees`</span>
+<span class="sd">method of `Corpus` objects (which dispatches to the appropriate mode).</span>
+
+<span class="sd">The first mode is *direct mode*, which is accessed through the</span>
+<span class="sd">`QueryFunction.match_tree` function.  This function receives as an argument a</span>
+<span class="sd">`Tree` object, and should return ``True`` if the tree matches the query.</span>
+
+<span class="sd">The second mode is *indexed mode*, accessed via the `QueryFunction.sql`</span>
+<span class="sd">instance method.  This method receives an instance of `CorpusDb` as an</span>
+<span class="sd">argument, and should return a SQLAlchemy `sqlalchemy.sql.expression.Select`</span>
+<span class="sd">object which will match the database ids of the matching nodes.  The function</span>
+<span class="sd">can access relevant sqlalchemy objects as fields of the ``corpus`` argument.</span>
+
+<span class="sd">``QueryFunction`` objects support a variety of combinatorics through</span>
+<span class="sd">overloading of python operators.  The following are supported:</span>
+
+<span class="sd">- conjunction via the ``&amp;`` operator</span>
+<span class="sd">- disjunction via the ``|`` operator</span>
+<span class="sd">- negation via the ``~`` operator</span>
+<span class="sd">- (TODO) ``^`` for dominance, ``&gt;`` for precedence</span>
+
+<span class="sd">Because the operator precedence rules can sometimes be unexpected (the boolean</span>
+<span class="sd">operators are originally for bitwise arithmetic in Python, for example),</span>
+<span class="sd">careful attention to parenthesization is needed.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">select</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.sql.expression</span> <span class="kn">import</span> <span class="n">union</span><span class="p">,</span> <span class="n">intersect</span>
+
+<span class="c"># TODO: label(&quot;FOO&quot;) ^ label(&quot;BAR&quot;) -&gt; foo idoms bar</span>
+<span class="c"># label(&quot;FOO&quot;) ^ (label(&quot;BAR&quot;) &gt; label(&quot;BAZ&quot;)) -&gt; foo idoms bar, foo idoms</span>
+<span class="c"># baz, bar (s)precedes baz</span>
+<span class="c"># label(&quot;FOO&quot;) ^ (label(&quot;BAR&quot;), label(&quot;BAZ&quot;)) -&gt; foo idoms bar, foo idoms baz,</span>
+<span class="c"># no ordering between bar and baz</span>
+
+
+<div class="viewcode-block" id="QueryFunction"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction">[docs]</a><span class="k">class</span> <span class="nc">QueryFunction</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parent for all query functions in the Lovett query language.</span>
+
+<span class="sd">    This class defines the interface that all query functions are expected to</span>
+<span class="sd">    obey.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="QueryFunction.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return ``True`` if a tree matches this query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tree (`lovett.tree.Tree`): The tree to match against.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True iff this query matches the tree argument.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="QueryFunction.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a SQLAlchemy select implementing the query.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            corpus (CorpusDb): The corpus against which</span>
+<span class="sd">                the query will be evaluated.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            sqlalchemy.sql.expression.Select: An expression implementing the query.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="QueryFunction.__and__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.__and__">[docs]</a>    <span class="k">def</span> <span class="nf">__and__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Conjunction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            other (QueryFunction): the second query.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QueryFunction: the conjunctuion of the two queries.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">And</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="QueryFunction.__or__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.__or__">[docs]</a>    <span class="k">def</span> <span class="nf">__or__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Disjunction.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            other (QueryFunction): the second query.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QueryFunction: the disjunctuion of the two queries.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="QueryFunction.__invert__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.__invert__">[docs]</a>    <span class="k">def</span> <span class="nf">__invert__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Negation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QueryFunction: the negation of the query.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Not</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+    <span class="nd">@abc.abstractmethod</span>
+<div class="viewcode-block" id="QueryFunction.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.QueryFunction.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the string representation of this query.</span>
+
+<span class="sd">        It should be capable of being read by the python interpreter to</span>
+<span class="sd">        reconstitute the QueryFunction object.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+</div></div>
+<div class="viewcode-block" id="And"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.And">[docs]</a><span class="k">class</span> <span class="nc">And</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements conjunction of query functions.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="And.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.And.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+</div>
+<div class="viewcode-block" id="And.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.And.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="And.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.And.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">intersect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="And.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.And.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># TODO: we add lots of extra parens to make sure we&#39;re getting scoping</span>
+        <span class="c"># rules right...can we cut down on this? perhaps we only need to add</span>
+        <span class="c"># parens for or, but not and</span>
+        <span class="k">return</span> <span class="s">&quot;(&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; &amp; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span>
+
+</div></div>
+<div class="viewcode-block" id="Or"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Or">[docs]</a><span class="k">class</span> <span class="nc">Or</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements disjunction of query functions.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Or.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Or.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
+</div>
+<div class="viewcode-block" id="Or.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Or.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">res</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Or.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Or.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Or.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Or.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;(&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; | &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span>
+
+</div></div>
+<div class="viewcode-block" id="Not"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not">[docs]</a><span class="k">class</span> <span class="nc">Not</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements negation of query functions.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Not.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fn</span> <span class="o">=</span> <span class="n">fn</span>
+</div>
+<div class="viewcode-block" id="Not.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tree</span>
+</div>
+<div class="viewcode-block" id="Not.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;TODO&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Not.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;~&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="WrapperQueryFunction"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.WrapperQueryFunction">[docs]</a><span class="k">class</span> <span class="nc">WrapperQueryFunction</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements common functionality for queries which wrap another</span>
+<span class="sd">    query.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str): the name of this query, for use in the string representation.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="WrapperQueryFunction.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.WrapperQueryFunction.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span>
+</div>
+<div class="viewcode-block" id="WrapperQueryFunction.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.WrapperQueryFunction.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">(</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="idoms"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.idoms">[docs]</a><span class="k">class</span> <span class="nc">idoms</span><span class="p">(</span><span class="n">WrapperQueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements immediate-dominance queries.</span>
+
+<span class="sd">    This is roughly equivalent to the ``idoms`` function in CorpusSearch.</span>
+<span class="sd">    Thus the following query::</span>
+
+<span class="sd">        idoms(label(&quot;NP-SBJ&quot;))</span>
+
+<span class="sd">    is approximately equivalent in CorpusSearch to::</span>
+
+<span class="sd">        ___ idoms NP-SBJ</span>
+
+<span class="sd">    The blank in the CorpusSearch query is not specified by Lovett.  It is</span>
+<span class="sd">    typical to specify this by conjoining another ``label`` invocation::</span>
+
+<span class="sd">        label(&quot;IP-MAT&quot;) &amp; idoms(label(&quot;NP-SBJ&quot;))</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="idoms.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.idoms.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;idoms&quot;</span>
+</div>
+<div class="viewcode-block" id="idoms.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.idoms.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">daughter</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">daughter</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="idoms.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.idoms.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">parent</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">depth</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">child</span> <span class="o">==</span> <span class="n">s</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="c"># TODO: convenience functions:</span>
+<span class="c"># - daughters(x, y, z) -&gt; daughter(x) &amp; daughter(y) &amp; ...</span>
+<span class="c"># - daughters_ordered(x, y, z) -&gt; daughter(x &amp; sprec(y &amp; sprec(z)))</span>
+</div></div>
+<div class="viewcode-block" id="doms"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms">[docs]</a><span class="k">class</span> <span class="nc">doms</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements dominance queries at arbitrary depth.</span>
+
+<span class="sd">    Its usage is very similar to that of the `idoms` class, which see.</span>
+<span class="sd">    Naturally, the analogous CorpusSearch function in this case is ``doms``</span>
+<span class="sd">    and not ``idoms``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="doms.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;doms&quot;</span>
+</div>
+<div class="viewcode-block" id="doms.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">,</span> <span class="n">_nested</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">_nested</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">for</span> <span class="n">daughter</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">daughter</span><span class="p">,</span> <span class="bp">True</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="doms.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">parent</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">child</span> <span class="o">==</span> <span class="n">s</span><span class="p">)</span>
+        <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="label"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.label">[docs]</a><span class="k">class</span> <span class="nc">label</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements matching tree node labels.</span>
+
+<span class="sd">    The ``label`` slot (and argument to the initializer function) provides</span>
+<span class="sd">    several ways of specifying the label to match.  If label is a string, it</span>
+<span class="sd">    will be matched as either the entire label, or a prefix of the label</span>
+<span class="sd">    followed by one or more trailing dashtags.  The default matching behavior</span>
+<span class="sd">    for ``label(&quot;NP&quot;)`` is as follows:</span>
+
+<span class="sd">    ====== ========</span>
+<span class="sd">    string matches?</span>
+<span class="sd">    ====== ========</span>
+<span class="sd">    NP     yes</span>
+<span class="sd">    NP-SBJ yes</span>
+<span class="sd">    NPX    no</span>
+<span class="sd">    ====== ========</span>
+
+<span class="sd">    The argument ``exact`` can be used to require exact matching, which</span>
+<span class="sd">    changes the matching behavior to the following:</span>
+
+<span class="sd">    ====== ========</span>
+<span class="sd">    string matches?</span>
+<span class="sd">    ====== ========</span>
+<span class="sd">    NP     yes</span>
+<span class="sd">    NP-SBJ no</span>
+<span class="sd">    NPX    no</span>
+<span class="sd">    ====== ========</span>
+
+<span class="sd">    The bias towards prefix matching is intentional -- the indexed query</span>
+<span class="sd">    engine can implement prefix searches in a fast way, whereas non-prefix</span>
+<span class="sd">    matches are slower.  In cases where you need a non-prefix match, you</span>
+<span class="sd">    should look at whether the other label matching functions are a better</span>
+<span class="sd">    fit.  (Currently this encompasses only `dash_tag`).</span>
+
+<span class="sd">    .. note:: TODO</span>
+
+<span class="sd">       It would probably be a good idea to add more label matching functions</span>
+<span class="sd">       with optimized SQL implementations.  What would be good candidates?</span>
+<span class="sd">       One idea would be to allow this function to take a set of strings as an</span>
+<span class="sd">       argument, and match whether the label is a member of the set.  This</span>
+<span class="sd">       could then be turned into a massive disjunction in SQL, which is</span>
+<span class="sd">       (probably) not too slow.  This would also allow the set to be generated</span>
+<span class="sd">       programmatically in python, like this example common in Old English</span>
+<span class="sd">       queries::</span>
+
+<span class="sd">           conjugations = [tense + mood for tense in (&quot;P&quot;, &quot;D&quot;)</span>
+<span class="sd">                                        for mood in (&quot;&quot;,&quot;I&quot;,&quot;S&quot;)]</span>
+<span class="sd">           conjugations.append(&quot;I&quot;)  ## imperative</span>
+<span class="sd">           conjugations.append(&quot;&quot;)   ## infinitive -- if not restricted to tensed vbs</span>
+<span class="sd">           verbs = [type + conjugation for type in (&quot;VB&quot;,&quot;MD&quot;,&quot;HV&quot;, ...)</span>
+<span class="sd">                                       for conjugation in conjugations]</span>
+<span class="sd">           all_verbs = set([x + y for x in (&quot;&quot;, &quot;NEG+&quot;, &quot;RP+&quot;) for y in verbs])</span>
+
+<span class="sd">    The ``label`` argument can also be a regular expression object (or indeed</span>
+<span class="sd">    any object with a ``search`` method).  In this case, the regular</span>
+<span class="sd">    expression is matched against the label.  In this case the ``exact``</span>
+<span class="sd">    parameter is ignored.</span>
+
+<span class="sd">    .. caution:: Indexed mode operation</span>
+
+<span class="sd">       Note that regular expression matching is not yet implemented in indexed</span>
+<span class="sd">       (SQL) mode.  It might be possible to implement this, but it will be</span>
+<span class="sd">       slow.  It is better to use one of the specialized label matching</span>
+<span class="sd">       functions.  If you find a common use case for which a label matching</span>
+<span class="sd">       function does not exist, please open an issue report.  (TODO: link to</span>
+<span class="sd">       github issues page)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        label: the label to match</span>
+<span class="sd">        exact (bool): whether to require an exact match; otherwise</span>
+<span class="sd">            prefix matching is allowed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="label.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.label.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">exact</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            label: the label to match; see the class docstring for details</span>
+<span class="sd">            exact (bool): whether to require an exact match</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exact</span> <span class="o">=</span> <span class="n">exact</span>
+</div>
+<div class="viewcode-block" id="label.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.label.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s">&quot;search&quot;</span><span class="p">):</span>
+            <span class="n">rx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exact</span><span class="p">:</span>
+                <span class="n">rx</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;^&quot;</span> <span class="o">+</span> <span class="n">label</span> <span class="o">+</span> <span class="s">&quot;$&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rx</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;^&quot;</span> <span class="o">+</span> <span class="n">label</span> <span class="o">+</span> <span class="s">&quot;(-|$)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rx</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">label</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="label.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.label.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="s">&quot;search&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Regular expression label matching not implemented for indexed corpora&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&quot;%&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="ow">or</span> <span class="s">&quot;_&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">:</span>
+            <span class="c"># TODO: fix this, ideally by enforcing labels to fall in [A-Z0-9+-]</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Illegal characters in label&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exact</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Either we match the label exactly, or the label plus one or more</span>
+            <span class="c"># dash tags</span>
+            <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span> <span class="o">|</span>
+                <span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">+</span> <span class="s">&quot;-%&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="label.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.label.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;label(</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">),</span>
+                                    <span class="s">&quot;, exact=True&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exact</span> <span class="k">else</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span>
+
+</div></div>
+<div class="viewcode-block" id="dash_tag"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.dash_tag">[docs]</a><span class="k">class</span> <span class="nc">dash_tag</span><span class="p">(</span><span class="n">label</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements matching a dash tag against a node label.</span>
+
+<span class="sd">    The dash tag can either be in the middle of the label as in ``*-TAG-*`` or</span>
+<span class="sd">    at the end as in ``*-TAG``, where ``*`` represents an arbitrary</span>
+<span class="sd">    (non-empty) string.  Does not support the matching of partial dash tags,</span>
+<span class="sd">    i.e. the use of ``dash_tag(&quot;FOO&quot;)`` to match ``XP-FOOBAR``.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        tag (str): the dash tag to search for.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="dash_tag.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.dash_tag.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;-&quot;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;(-|$)&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="dash_tag.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.dash_tag.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;dash_tag(</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span>
+</div>
+<div class="viewcode-block" id="dash_tag.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.dash_tag.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s">&quot;%-&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">+</span> <span class="s">&quot;-%&quot;</span><span class="p">)</span> <span class="o">|</span>
+            <span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="s">&quot;%-&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">)</span>
+        <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="sprec"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec">[docs]</a><span class="k">class</span> <span class="nc">sprec</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="c"># TODO!</span>
+    <span class="k">pass</span>
+
+<span class="c"># TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for</span>
+<span class="c"># daughters</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

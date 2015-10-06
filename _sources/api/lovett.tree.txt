@@ -1,0 +1,7 @@
+lovett.tree module
+==================
+
+.. automodule:: lovett.tree
+    :members:
+    :undoc-members:
+    :private-members:

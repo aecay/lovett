@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lovett.loader module &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="top" title="Lovett  documentation" href="../index.html" />
+    <link rel="up" title="lovett package" href="lovett.html" />
+    <link rel="next" title="lovett.query module" href="lovett.query.html" />
+    <link rel="prev" title="lovett.ilovett module" href="lovett.ilovett.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-lovett.loader">
+<span id="lovett-loader-module"></span><h1>lovett.loader module<a class="headerlink" href="#module-lovett.loader" title="Permalink to this headline">¶</a></h1>
+<p>Methods to fetch corpora from the web, filesystem, or other sources.</p>
+<p>Currently includes:</p>
+<ul class="simple">
+<li>A loader for local files (TODO)</li>
+<li>A loader for files from <a class="reference external" href="http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)">IcePaHC</a></li>
+</ul>
+<dl class="class">
+<dt id="lovett.loader.Loader">
+<em class="property">class </em><code class="descname">Loader</code><a class="reference internal" href="../_modules/lovett/loader.html#Loader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a base class for corpus loaders to inherit from.</p>
+<dl class="method">
+<dt id="lovett.loader.Loader.file">
+<code class="descname">file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#Loader.file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader.file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the content of one of the files from a corpus.</p>
+<p>This method must use caching if it makes network requests or uses other
+expensive resources (beyond disk access).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; The name of the file requested</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The file&#8217;s content</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.Loader.files">
+<code class="descname">files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#Loader.files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader.files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of files in the corpus.</p>
+<p>This method must use caching if it makes network requests or uses other
+expensive resources (beyond disk access).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of filenames</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.Loader.corpus">
+<code class="descname">corpus</code><span class="sig-paren">(</span><em>files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#Loader.corpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader.corpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load files into a <code class="docutils literal"><span class="pre">Corpus</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>files</strong> (<em>str or list of str</em>) &#8211; The files to include in the corpus.  Default is to include all
+available files.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The corpus composed of all trees in all files.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus">Corpus</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.loader.GithubLoader">
+<em class="property">class </em><code class="descname">GithubLoader</code><span class="sig-paren">(</span><em>user</em>, <em>repo</em>, <em>ref='master'</em>, <em>directory=''</em>, <em>extension='.psd'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic interface for fetching corpus files from a Github repo.</p>
+<dl class="method">
+<dt id="lovett.loader.GithubLoader.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>user</em>, <em>repo</em>, <em>ref='master'</em>, <em>directory=''</em>, <em>extension='.psd'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a GithubLoader.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>user</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Github username of the repository to load from</li>
+<li><strong>repo</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Name of the repository to load from</li>
+<li><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; A git ref of the revision to fetch.  Defaults to &#8220;master&#8221;, the
+latest revision.  If the repository uses git tags, you can request
+a specific version of the corpus.  You can also use a sha1 hash to
+request a specific revision.</li>
+<li><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Path to the directory containing parsed files.  (TODO: support
+corpora with parsed files in more than one directory.)</li>
+<li><strong>extension</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; File extension of corpus files.  Defaults to &#8221;.psd&#8221;.  (TODO:
+support multiple extensions.)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.GithubLoader.file">
+<code class="descname">file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.GithubLoader.files">
+<code class="descname">files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.GithubLoader.fetch_all">
+<code class="descname">fetch_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.fetch_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.fetch_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.GithubLoader.clear_cache">
+<code class="descname">clear_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.clear_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.loader.ICEPAHC">
+<code class="descname">ICEPAHC</code><em class="property"> = &lt;lovett.loader.GithubLoader object&gt;</em><a class="headerlink" href="#lovett.loader.ICEPAHC" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <code class="docutils literal"><span class="pre">GithubLoader</span></code> which is pre-populated with the details of the IcePaHC
+corpus.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.loader.FileLoader">
+<em class="property">class </em><code class="descname">FileLoader</code><span class="sig-paren">(</span><em>path</em>, <em>extension='.psd'</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader" title="Permalink to this definition">¶</a></dt>
+<dd><p>A loader for corpus files from the local filesystem.</p>
+<dl class="method">
+<dt id="lovett.loader.FileLoader.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>path</em>, <em>extension='.psd'</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.FileLoader.file">
+<code class="descname">file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader.file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader.file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.loader.FileLoader.files">
+<code class="descname">files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader.files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader.files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">lovett</a><ul>
+  <li><a href="lovett.html">lovett package</a><ul>
+      <li>Previous: <a href="lovett.ilovett.html" title="previous chapter">lovett.ilovett module</a></li>
+      <li>Next: <a href="lovett.query.html" title="next chapter">lovett.query module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/lovett.loader.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="../_sources/api/lovett.loader.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

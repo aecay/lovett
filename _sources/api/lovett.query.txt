@@ -1,0 +1,7 @@
+lovett.query module
+===================
+
+.. automodule:: lovett.query
+    :members:
+    :undoc-members:
+    :private-members:

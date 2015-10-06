@@ -1,0 +1,120 @@
+=============
+Example usage
+=============
+
+    :Author: Aaron Ecay
+
+
+
+
+Introduction
+------------
+
+The aim of this document is to walk through typical use cases of Lovett.
+It assumes that you have successfully installed Lovett following the installation directions given elsewhere in this documentation.
+
+What is Lovett for?
+~~~~~~~~~~~~~~~~~~~
+
+The extensional definition of Lovett is given elsewhere in the documentation.
+
+The aim of this section is rather to explain why Lovett exists, and what it will enable you to do.
+Lovett transforms corpora into programmatic data structures.
+This encourages you to think of parse trees not as static pieces of data, but as dynamic objects.
+Unlike in botany, the extraction of data from these trees is not an exercise of slogging through the forest counting trunks and leaves.
+All the counting is already contained in the parse itself (and someone already did a lot of slogging to make it available to you).
+Extracting interesting data from a parsed corpus is much more like programming: creating instructions so that a computer will perform a task for you.
+
+Existing infrastructure (primarily `CorpusSearch <http://corpussearch.sourceforge.net/>`_) does not fit this model of corpus research well.
+CorpusSearch basically does one thing: search for a structure in the corpus.
+It provides one very simple iteration operation: the coding query, which executes several searches sequentially.
+It also provides one device for eliminating redundancy: definitions files, which can compress long search terms into shorter ones (but are limited to a single argument of one of CS’s search functions).
+Finally, CS is difficult to interact with, since it requires a fair amount of boilerplate repetition, insists on accessing its inputs and outputs in particular locations in the file system, and is run from the system shell.
+The cumulative effect of these aspects of CS is to obscure the relationship between corpus data and computer programming.
+
+A fully fledged programming language, on the other hand, provides a variety of iteration constructs, and a variety of combinatory strategies for eliminating redundancy.
+By embedding corpus data in such an environment, Lovett brings the following advantages:
+
+- Ease of use.
+  For users accustomed to programming, using Lovett should be easy to understand.
+  Programming novices can avail themselves of the multitudinarious resources for learning programming (and python in particular).
+  The skills they gain will thus be more transferable.
+
+- Ease of understanding.
+  Because programs written with Lovett can take advantage of appropriate programming constructs, they will be easier to understand.
+  This means that linguists can share their corpus analyses more easily.
+
+- Ease of integration.
+  By picking python as the target language, Lovett can integrate with a wide variety of existing libraries for statistical analysis, text processing, data visualization, and other tasks.
+
+Corpus creation projects have made heavy use of CorpusSearch’s other feature – revision queries.
+Lovett brings benefits to this use as well.
+Even more than data extraction, transforming a corpus by means of rules is a programmatic task – indeed a kind of rule-based parsing.
+Using a fully-developed programming language will allow the logic of this parsing to be expressed perspicuously – and indeed will aid in its development as well.
+
+Loaders
+-------
+
+The first task of an analyst is to load corpus data into Lovett.  Loaders are provided for this purpose in the ``lovett.loaders`` module for this purpose.  There are two kinds:
+
+``FileLoader``
+    This class implements loading from files on disk.  It will be the most commonly used loader
+
+``GithubLoader``
+    This class implements loading corpus files from a repository hosted on github.
+    It can be used to quickly disseminate code for an analysis of public data to a large group (for example students in a class) without requiring that they individually download the data.
+
+The ``loaders`` module also provides loaders for the following publicly available corpora:
+
+- `IcePaHC <http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)>`_
+
+For this example, we’ll create a loader which targets a single file hosted in the Lovett source code repository (a parsed version of TODO)
+
+.. code-block:: python
+
+    import lovett.loader
+    my_loader = lovett.loader.GithubLoader(user="antonkarl",
+                                           repo="icecorpus",
+                                           directory="finished/")
+
+We can find out which files are contained in this corpus:
+
+.. code-block:: python
+
+    my_loader.files()[0:5]
+
+.. code-block:: none
+
+   ['1150.firstgrammar.sci-lin.psd', '1150.homiliubok.rel-ser.psd', '1210.jartein.rel-sag.psd', '1210.thorlakur.rel-sag.psd', '1250.sturlunga.nar-sag.psd']
+
+We can also get the contents of a file by name: [1]_ 
+
+.. code-block:: python
+
+    my_loader.file("1150.firstgrammar.sci-lin.psd")[0:100]
+
+.. code-block:: none
+
+   
+   
+   ( (IP-MAT (PP (P Í-í)
+                 (NP (QS-D flestum-margur) (NS-D löndum-land)))
+             (VBPI setja-setja)
+
+The final functionality which a loader provides is to transform the files it accesses into a ``Corpus`` object.
+By default, all available files will be included.
+If you want a ``Corpus`` containing trees from just a single file, or set of files, you can pass a string or list to the ``corpus`` function.
+
+.. code-block:: python
+
+    my_corpus = my_loader.corpus()
+
+Details about the file formats that Lovett understands are presented elsewhere in the documentation.
+
+Corpus objects
+--------------
+
+...
+
+
+.. [1] Here we are displaying just the first 100 characters of the file, to avoid cluttering the document with a very long output.

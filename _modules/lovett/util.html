@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>lovett.util &mdash; Lovett  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="top" title="Lovett  documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for lovett.util</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="nb">reduce</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="n">TRACE_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;*T*&quot;</span><span class="p">,</span> <span class="s">&quot;*ICH*&quot;</span><span class="p">,</span> <span class="s">&quot;*CL*&quot;</span><span class="p">,</span> <span class="s">&quot;*&quot;</span><span class="p">]</span>
+<span class="n">SILENT_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;*con*&quot;</span><span class="p">,</span> <span class="s">&quot;*exp*&quot;</span><span class="p">,</span> <span class="s">&quot;*pro*&quot;</span><span class="p">]</span>
+<span class="n">IDX_GAP</span> <span class="o">=</span> <span class="s">&quot;gap&quot;</span>
+<span class="n">IDX_REGULAR</span> <span class="o">=</span> <span class="s">&quot;regular&quot;</span>
+
+<span class="c"># ### Tree validation</span>
+<span class="c"># # TODO: this fn is untested</span>
+<span class="c"># def validateIndices(tree):</span>
+<span class="c">#     indices = []</span>
+<span class="c">#     for leaf in tree.leaves():</span>
+<span class="c">#         idx = indexOfTree(leaf)</span>
+<span class="c">#         if indices[idx]:</span>
+<span class="c">#             indices[idx] = indices[idx] + 1</span>
+<span class="c">#         else:</span>
+<span class="c">#             indices[idx] = 1</span>
+<span class="c">#     valid = True</span>
+<span class="c">#     for i in indices:</span>
+<span class="c">#         if not indices[i] or indices[i] == 1:</span>
+<span class="c">#             valid = False</span>
+<span class="c">#     return valid</span>
+
+<span class="c"># def validateTagset(tree, tags, dashes):</span>
+<span class="c">#     # TODO: Idea: allow passing a list of lists, like:</span>
+<span class="c">#     # [ [&quot;NP&quot;, &quot;-OB1&quot;, &quot;-OB2&quot;, ...],</span>
+<span class="c">#     #   ...</span>
+<span class="c">#     #   ] &lt;-- or maybe use a dict?</span>
+<span class="c">#     # Convert this into a grammar (peg style) and validate against it.</span>
+<span class="c">#     # Also: separate tagsets for leaves and non-terminals</span>
+<span class="c">#     pass</span>
+
+<span class="c"># ### Traces/movement indices</span>
+<span class="c"># def _max_or_none(x, y):</span>
+<span class="c">#     if x is None and y is None:</span>
+<span class="c">#         return None</span>
+<span class="c">#     if y is None:</span>
+<span class="c">#         return x</span>
+<span class="c">#     if x is None:</span>
+<span class="c">#         return y</span>
+<span class="c">#     return max(x, y)</span>
+
+<span class="c"># def largest_index(tree):</span>
+<span class="c">#     return reduce(_max_or_none, map(index, tree.subtrees))</span>
+
+
+<div class="viewcode-block" id="set_index"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.set_index">[docs]</a><span class="k">def</span> <span class="nf">set_index</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;INDEX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+
+</div>
+<div class="viewcode-block" id="index"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.index">[docs]</a><span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;INDEX&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="index_type"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.index_type">[docs]</a><span class="k">def</span> <span class="nf">index_type</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;IDX-TYPE&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">idx</span> <span class="ow">and</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">IDX_GAP</span><span class="p">,</span> <span class="n">IDX_REGULAR</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Illegal index type </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">idx</span>
+
+<span class="c"># def index_type_short(tree):</span>
+<span class="c">#     it = index_type(tree)</span>
+<span class="c">#     if it == IDX_GAP:</span>
+<span class="c">#         return &quot;=&quot;</span>
+<span class="c">#     elif it == IDX_REGULAR:</span>
+<span class="c">#         return &quot;-&quot;</span>
+<span class="c">#     else:</span>
+<span class="c">#         return None</span>
+
+</div>
+<div class="viewcode-block" id="remove_index"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.remove_index">[docs]</a><span class="k">def</span> <span class="nf">remove_index</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;INDEX&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;IDX-TYPE&#39;</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="label_and_index"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.label_and_index">[docs]</a><span class="k">def</span> <span class="nf">label_and_index</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;=&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;too many = signs in label: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">s</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="k">return</span> <span class="s">&quot;=&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">IDX_GAP</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="k">return</span> <span class="s">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">IDX_REGULAR</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+
+<span class="c"># def index_from_string(s):</span>
+<span class="c">#     return label_and_index(s)[2]</span>
+
+<span class="c"># def index_type_from_string(s):</span>
+<span class="c">#     return label_and_index(s)[1]</span>
+
+<span class="c"># TODO: are traces leaves?</span></div>
+<div class="viewcode-block" id="is_leaf"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_leaf">[docs]</a><span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">lovett.tree</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lovett</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">Leaf</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="is_trace"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_trace">[docs]</a><span class="k">def</span> <span class="nf">is_trace</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">is_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">text</span> <span class="ow">in</span> <span class="n">TRACE_TYPES</span>
+
+</div>
+<div class="viewcode-block" id="is_trace_string"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_trace_string">[docs]</a><span class="k">def</span> <span class="nf">is_trace_string</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">TRACE_TYPES</span>
+
+</div>
+<div class="viewcode-block" id="is_silent"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_silent">[docs]</a><span class="k">def</span> <span class="nf">is_silent</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">is_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="n">t</span><span class="o">.</span><span class="n">text</span> <span class="ow">in</span> <span class="n">SILENT_TYPES</span>
+
+</div>
+<div class="viewcode-block" id="is_ec"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_ec">[docs]</a><span class="k">def</span> <span class="nf">is_ec</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">is_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">text</span> <span class="o">==</span> <span class="s">&quot;0&quot;</span> <span class="ow">or</span> <span class="n">is_trace</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_silent</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="is_text_leaf"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_text_leaf">[docs]</a><span class="k">def</span> <span class="nf">is_text_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">is_leaf</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_ec</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_silent</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> \
+        <span class="n">t</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;CODE&quot;</span><span class="p">,</span> <span class="s">&quot;CODING&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="is_nonterminal"><a class="viewcode-back" href="../../api/lovett.util.html#lovett.util.is_nonterminal">[docs]</a><span class="k">def</span> <span class="nf">is_nonterminal</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">lovett.tree</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">lovett</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">NonTerminal</span><span class="p">)</span>
+
+<span class="c"># def iter_flatten(iterable):</span>
+<span class="c">#     it = iter(iterable)</span>
+<span class="c">#     for e in it:</span>
+<span class="c">#         if isinstance(e, (list, tuple)) and not \</span>
+<span class="c">#            isinstance(e, lovett.tree.Tree):</span>
+<span class="c">#             for f in iter_flatten(e):</span>
+<span class="c">#                 yield f</span>
+<span class="c">#         else:</span>
+<span class="c">#             yield e</span>
+
+<span class="c"># def _parseVersionTree(t):</span>
+<span class="c">#     &quot;&quot;&quot;Parse a version tree.</span>
+
+<span class="c">#     A version tree must have the form:</span>
+
+<span class="c">#     ::</span>
+
+<span class="c">#       ( (VERSION (KEY1 val1)</span>
+<span class="c">#                  (KEY2 (SUBKEY1 val1))))</span>
+
+<span class="c">#     :param t: the version tree to parse</span>
+<span class="c">#     :type t: `LovettTree`</span>
+
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     if not isinstance(t, lovett.tree_new.Root):</span>
+<span class="c">#         raise ValueError(&quot;pass a Root tree to _parseVersionTree: %r&quot; % t)</span>
+<span class="c">#     version = t.tree</span>
+<span class="c">#     if version.label != &quot;VERSION&quot;:</span>
+<span class="c">#         return None</span>
+<span class="c">#     return _treeToDict(t[0])</span>
+
+<span class="c"># def _treeToDict(t):</span>
+<span class="c">#     &quot;&quot;&quot;Convert a `LovettTree` to a dictionary.</span>
+
+<span class="c">#     Each key in the dictionary corresponds to a node label from the</span>
+<span class="c">#     tree; each value is either a string (leaf node) or another dict</span>
+<span class="c">#     (recursive node.)</span>
+
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     if isinstance(t, lovett.tree_new.Leaf):</span>
+<span class="c">#         return t.text</span>
+<span class="c">#     elif isinstance(t, lovett.tree_new.Root):</span>
+<span class="c">#         return _treeToDict(t.tree)</span>
+<span class="c">#     else:</span>
+<span class="c">#         return dict([(n.label, _treeToDict(n)) for n in t])</span>
+
+<span class="c"># UNIFY_VERSION_IGNORE_KEYS = [&quot;HASH&quot;]</span>
+
+<span class="c"># def _unifyVersionTrees(old, new):</span>
+<span class="c">#     for k in new.keys():</span>
+<span class="c">#         if k in UNIFY_VERSION_IGNORE_KEYS:</span>
+<span class="c">#             continue</span>
+<span class="c">#         if k in old:</span>
+<span class="c">#             if old[k] == new[k]:</span>
+<span class="c">#                 pass</span>
+<span class="c">#             else:</span>
+<span class="c">#                 raise Exception(&quot;Mismatched version info&quot;)</span>
+<span class="c">#         else:</span>
+<span class="c">#             old[k] = new[k]</span>
+<span class="c">#     return old</span>
+
+<span class="c"># def metadata_str(dic, name=&quot;METADATA&quot;, indent=0):</span>
+<span class="c">#     r = &quot;(&quot; + name + &quot; &quot;</span>
+<span class="c">#     l = len(r)</span>
+
+<span class="c">#     def helper(d, k):</span>
+<span class="c">#         if not isinstance(d[k], dict):</span>
+<span class="c">#             return &quot;(&quot; + k + &quot; &quot; + str(d[k]) + &quot;)&quot;</span>
+<span class="c">#         else:</span>
+<span class="c">#             return metadata_str(d[k], k, indent + l)</span>
+<span class="c">#     r += (&quot;\n&quot; + &quot; &quot; * (indent + l)).join(</span>
+<span class="c">#         helper(dic, key) for key in sorted(dic.keys())</span>
+<span class="c">#     )</span>
+<span class="c">#     r += &quot;)&quot;</span>
+<span class="c">#     return r</span>
+
+<span class="c"># def is_word(tree):</span>
+<span class="c">#     return (is_leaf(tree)) and (not is_ec(tree)) and \</span>
+<span class="c">#         tree.label not in [&quot;CODE&quot;, &quot;.&quot;, &quot;,&quot;, &quot;FW&quot;]</span>
+
+<span class="c"># def is_code_node(tree):</span>
+<span class="c">#     return tree.label == &quot;CODE&quot;</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Aaron Ecay.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

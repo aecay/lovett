@@ -1,0 +1,7 @@
+lovett.corpus module
+====================
+
+.. automodule:: lovett.corpus
+    :members:
+    :undoc-members:
+    :private-members:
