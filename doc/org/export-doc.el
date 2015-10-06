@@ -12,8 +12,9 @@
 (defun package--compile (&rest _)
   nil)
 
-(package-install 'org)
-(package-install 'ox-rst)
+(with-demoted-errors "Error: %S"
+  (package-install 'org)
+  (package-install 'ox-rst))
 
 (require 'ox-publish)
 (require 'ox-rst)
