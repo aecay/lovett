@@ -18,3 +18,10 @@ python setup.py develop
 4. Get emacs up to speed
    1. =M-x pyvenv-activate= choose the =venv/= subdirectory
    2. =M-x elpy-rpc-restart=
+
+For the documentation, do this in the parent directory of this repo:
+#+begin_src sh
+git clone git@github.com:aecay/lovett lovett-docs
+cd lovett-docs
+git br -t docs origin/docs
+#+end_src
