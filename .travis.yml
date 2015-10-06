@@ -4,8 +4,10 @@ python:
   - "3.4"
   - "3.5"
 
-install: "pip install -r requirements.txt"
-script: nosetests
+install: "pip install -r requirements.txt; pip install sphinx"
+script:
+  - curl -o travis_after_all.py https://raw.github.com/dmakhno/travis_after_all/master/travis_after_all.py
+  - nosetests
 
 after_success:
   - "make doc"
@@ -15,3 +17,33 @@ secure: "DUm8EDu6YRlfXk/BoGy7fsTtuMKWyjaMwkjKAKuDq/+vBAouTY163j8xtSqbwEnyW7x1EfU
 
 env:
   GH_REF: github.com/aecay/lovett.git
+
+# All this stupidity is needed because of
+# https://github.com/travis-ci/travis-ci/issues/929
+after_success:
+  - python travis_after_all.py
+  - export $(cat .to_export_back)
+  - |
+      if [ "$BUILD_LEADER" = "YES" ]; then
+        if [ "$BUILD_AGGREGATE_STATUS" = "others_succeeded" ]; then
+          echo "All Succeded! PUBLISHING..."
+          make doc
+          make doc-push
+        else
+          echo "Some Failed"
+        fi
+      fi
+
+after_failure:
+  - python travis_after_all.py
+  - export $(cat .to_export_back)
+  - |
+      if [ "$BUILD_LEADER" = "YES" ]; then
+        if [ "$BUILD_AGGREGATE_STATUS" = "others_failed" ]; then
+          echo "All Failed"
+        else
+          echo "Some Failed"
+        fi
+      fi
+after_script:
+  - echo leader=$BUILD_LEADER status=$BUILD_AGGREGATE_STATUS
