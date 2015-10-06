@@ -71,7 +71,7 @@ class Metadata(collections.abc.MutableMapping):
         del self._dict[name]
 
 
-class Tree(abc.ABC):
+class Tree(metaclass=abc.ABCMeta):
     __slots__ = ["parent", "metadata", "_label"]
 
     def __init__(self, label, metadata=None):
