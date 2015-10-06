@@ -1,6 +1,6 @@
 (setq debug-on-error t)
-(make-directory "/tmp/lovett-emacs"t )
-(setq user-emacs-directory "/tmp/lovett-emacs")
+(make-directory "lovett-emacs" t)
+(setq user-emacs-directory "lovett-emacs")
 
 (require 'package)
 (setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
@@ -12,10 +12,8 @@
 (defun package--compile (&rest _)
   nil)
 
-(ignore-errors
-  ;; Emacs bug #21625
-  (package-install 'org)
-  (package-install 'ox-rst))
+(package-install 'org)
+(package-install 'ox-rst)
 
 (require 'ox-publish)
 (require 'ox-rst)

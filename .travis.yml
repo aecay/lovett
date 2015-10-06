@@ -33,6 +33,7 @@ after_success:
         if [ "$BUILD_AGGREGATE_STATUS" = "others_succeeded" ]; then
           echo "All Succeded! PUBLISHING..."
           make doc
+          rm -r lovett-emacs
           make doc-push
         else
           echo "Some Failed"
