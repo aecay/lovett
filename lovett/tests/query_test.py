@@ -20,11 +20,11 @@ class QueryTest(unittest.TestCase):
             t = T("(%s foo)" % pat)
             t2 = T("(%s (N foo))" % pat)
             if passes:
-                self.assertIs(l.match_tree(t), t)
-                self.assertIs(l.match_tree(t2), t2)
+                self.assertTrue(l.match_tree(t))
+                self.assertTrue(l.match_tree(t2))
             else:
-                self.assertIsNone(l.match_tree(t))
-                self.assertIsNone(l.match_tree(t2))
+                self.assertFalse(l.match_tree(t))
+                self.assertFalse(l.match_tree(t2))
 
     def test_label_exact(self):
         l = Q.label("NP", exact=True)
@@ -40,11 +40,11 @@ class QueryTest(unittest.TestCase):
             t = T("(%s foo)" % pat)
             t2 = T("(%s (N foo))" % pat)
             if passes:
-                self.assertIs(l.match_tree(t), t)
-                self.assertIs(l.match_tree(t2), t2)
+                self.assertTrue(l.match_tree(t))
+                self.assertTrue(l.match_tree(t2))
             else:
-                self.assertIsNone(l.match_tree(t))
-                self.assertIsNone(l.match_tree(t2))
+                self.assertFalse(l.match_tree(t))
+                self.assertFalse(l.match_tree(t2))
 
     def test_dash_tag(self):
         l = Q.dash_tag("FOO")
@@ -60,11 +60,11 @@ class QueryTest(unittest.TestCase):
             t = T("(%s foo)" % pat)
             t2 = T("(%s (N foo))" % pat)
             if passes:
-                self.assertIs(l.match_tree(t), t)
-                self.assertIs(l.match_tree(t2), t2)
+                self.assertTrue(l.match_tree(t))
+                self.assertTrue(l.match_tree(t2))
             else:
-                self.assertIsNone(l.match_tree(t))
-                self.assertIsNone(l.match_tree(t2))
+                self.assertFalse(l.match_tree(t))
+                self.assertFalse(l.match_tree(t2))
 
     def test_and(self):
         l = Q.label("NP")
@@ -72,10 +72,10 @@ class QueryTest(unittest.TestCase):
         a = l & l2
         self.assertEqual(str(a), '(label("NP") & dash_tag("FOO"))')
         t = T("(NP-FOO (N bar))")
-        self.assertIs(a.match_tree(t), t)
+        self.assertTrue(a.match_tree(t))
 
         t = T("(NP (N bar))")
-        self.assertIsNone(a.match_tree(t))
+        self.assertFalse(a.match_tree(t))
 
     def test_or(self):
         l = Q.label("NP")
@@ -83,26 +83,26 @@ class QueryTest(unittest.TestCase):
         a = l | l2
         self.assertEqual(str(a), '(label("NP") | dash_tag("FOO"))')
         t = T("(NP-FOO (N bar))")
-        self.assertIs(a.match_tree(t), t)
+        self.assertTrue(a.match_tree(t))
 
         t = T("(NP (N bar))")
-        self.assertIs(a.match_tree(t), t)
+        self.assertTrue(a.match_tree(t))
 
         t = T("(XP-FOO (N bar))")
-        self.assertIs(a.match_tree(t), t)
+        self.assertTrue(a.match_tree(t))
 
     def test_not(self):
         l = ~Q.label("NP")
         self.assertEqual(str(l), "~label(\"NP\")")
 
         t = T("(NP (N foo))")
-        self.assertIsNone(l.match_tree(t))
+        self.assertFalse(l.match_tree(t))
 
         t = T("(NP foo)")
-        self.assertIsNone(l.match_tree(t))
+        self.assertFalse(l.match_tree(t))
 
         t = T("(XP foo)")
-        self.assertIs(l.match_tree(t), t)
+        self.assertTrue(l.match_tree(t), t)
 
 
 class QueryDbTest(unittest.TestCase):
@@ -177,14 +177,14 @@ class QueryDbTest(unittest.TestCase):
         self.assertEqual(self.d._reconstitute(res[3][0]), self.d[0][3][1])
 
     def test_daugher(self):
-        dq = Q.daughter(Q.label("ADJ"))
+        dq = Q.idoms(Q.label("ADJ"))
         c = self.d.engine.connect()
         res = c.execute(dq.sql(self.d).order_by(self.d.dom.c.parent)).fetchall()
         self.assertEqual(len(res), 1)
         self.assertEqual(self.d._reconstitute(res[0][0]), self.d[0][2])
 
     def test_daughter_and(self):
-        dq = Q.daughter(Q.label("NP")) & Q.daughter(Q.label("VBD"))
+        dq = Q.idoms(Q.label("NP")) & Q.idoms(Q.label("VBD"))
         c = self.d.engine.connect()
         res = c.execute(dq.sql(self.d).order_by(self.d.dom.c.parent)).fetchall()
         self.assertEqual(len(res), 1)
