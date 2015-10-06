@@ -9,7 +9,7 @@ virtualenv venv
    #+end_src
 2. (Only once) install development dependencies
    #+begin_src sh
-pip install jedi elpy nose
+pip install -r dev-requirements.txt
    #+end_src
 3. (Only once) install this package
    #+begin_src sh
