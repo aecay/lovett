@@ -14,6 +14,7 @@
 - speed benchmarks
   - figure out the sql indexing story
 - review all todos in code
+- doc coverage calculation; remove undoc-members from makefile
 
 
 # Before sending to Joel, Caitlin, other technical users (= “private” beta)
