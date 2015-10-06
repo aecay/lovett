@@ -2,6 +2,9 @@
  Lovett
 ========
 
+.. image:: https://travis-ci.org/aecay/lovett.svg
+    :target: https://travis-ci.org/aecay/lovett
+
 About
 =====
 
