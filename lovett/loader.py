@@ -125,14 +125,22 @@ class GithubLoader(Loader):
         self._tag = ref
         self._directory = directory
         self._extension = extension
-        self._files = {}
+        self._files = None
+        self._file_content = {}
 
     def file(self, filename):
-        if self._files[filename]:
-            return self._files[filename]
+        if filename not in self.files():
+            # TODO: do this check for all loaders
+            raise Exception("Invalid filename")
+        if filename in self._file_content:
+            return self._file_content[filename]
+        print("https://raw.githubusercontent.com/%s/%s/%s/%s%s" %
+                               (self._user, self._repo,
+                                self._tag, self._directory, filename))
         content = requests.get("https://raw.githubusercontent.com/%s/%s/%s/%s%s" %
-                               (self._user, self._repo, self._tag, self._directory, filename))
-        self._files[filename] = content
+                               (self._user, self._repo,
+                                self._tag, self._directory, filename)).text
+        self._file_content[filename] = content
         return content
 
     def files(self):
