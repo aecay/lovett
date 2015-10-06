@@ -4,12 +4,7 @@ python:
   - "3.4"
   - "3.5"
 
-before_install:
-  - sudo add-apt-repository -y ppa:ubuntu-elisp
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq emacs-snapshot
-
-install: "pip install -r requirements.txt; pip install sphinx"
+install: "pip install -r requirements.txt"
 script:
   - curl -o travis_after_all.py https://raw.githubusercontent.com/dmakhno/travis_after_all/master/travis_after_all.py
   - nosetests
@@ -32,6 +27,10 @@ after_success:
       if [ "$BUILD_LEADER" = "YES" ]; then
         if [ "$BUILD_AGGREGATE_STATUS" = "others_succeeded" ]; then
           echo "All Succeded! PUBLISHING..."
+          pip install sphinx
+          sudo add-apt-repository -y ppa:ubuntu-elisp
+          sudo apt-get update -qq
+          sudo apt-get install -qq emacs-snapshot
           make doc
           rm -r lovett-emacs
           make doc-push
