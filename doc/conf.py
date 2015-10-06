@@ -36,3 +36,16 @@ add_function_parentheses = False
 add_module_names = False
 
 trim_footnote_reference_space = True
+
+# Skip stupid autodoc stuff
+
+
+def maybe_skip_member(app, what, name, obj, skip, options):
+    if name in ["__weakref__", "__module__", "__doc__",
+                "__dict__", "__abstractmethods__"] or name.startswith("_abc_"):
+        return True
+    return False
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', maybe_skip_member)
