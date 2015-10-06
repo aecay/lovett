@@ -6,7 +6,7 @@ python:
 
 install: "pip install -r requirements.txt; pip install sphinx"
 script:
-  - curl -o travis_after_all.py https://raw.github.com/dmakhno/travis_after_all/master/travis_after_all.py
+  - curl -o travis_after_all.py https://raw.githubusercontent.com/dmakhno/travis_after_all/master/travis_after_all.py
   - nosetests
 
 after_success:
