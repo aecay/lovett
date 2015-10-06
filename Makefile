@@ -6,19 +6,13 @@ doc:
 	emacs -Q --script doc/org/export-doc.el
 
 doc-push: doc-html
-	[ -d /tmp/lovett-doc-git ] || git clone git@github.com:aecay/lovett.git /tmp/lovett-doc-git
-	export PWD=`pwd`
-	cd /tmp/lovett-doc-git; \
-	git checkout master;
-	git pull; \
-	git checkout docs ; \
-	git merge master; \
-	mkdir -p doc-built
-	cp -r doc/build/* /tmp/lovett-doc-git/doc-built
-	cp doc/conf.py /tmp/lovett-doc-git/doc-built
-	cd /tmp/lovett-doc-git; \
+	cp -r doc/build/* ../lovett-docs/doc-built
+	cp doc/conf.py ../lovett-docs/doc-built
+	cd ../lovett-docs; \
+	git fetch --all; \
+	git merge --no-edit master; \
 	git add doc-built; \
-	git commit -m "Autobuild documentation"; \
+	git commit -m "Autobuild docs"; \
 	git push
 
 doc-html: doc
