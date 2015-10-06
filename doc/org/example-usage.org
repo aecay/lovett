@@ -1,5 +1,7 @@
 #+title: Example usage
 
+#+property: header-args:python :session *lovett-docs* :results raw :wrap result
+
 * Notes                                                            :noexport:
 
 ** TODO code block situation in this document
@@ -77,24 +79,40 @@ The =loaders= module also provides loaders for the following publicly available 
 
 For this example, we’ll create a loader which targets a single file hosted in the Lovett source code repository (a parsed version of TODO)
 
-#+begin_src python
+#+begin_src python :exports code
 import lovett.loader
-my_loader = lovett.loader.GithubLoader(user="aecay",
-                                       repo="lovett",
-                                       directory="doc/example/")
+my_loader = lovett.loader.GithubLoader(user="antonkarl",
+                                       repo="icecorpus",
+                                       directory="finished/")
 #+end_src
+
+#+RESULTS:
 
 We can find out which files are contained in this corpus:
 
-#+begin_src python
-my_loader.files()
+#+begin_src python :exports both :results raw :wrap result
+my_loader.files()[0:5]
 #+end_src
+
+#+RESULTS:
+#+BEGIN_result
+['1150.firstgrammar.sci-lin.psd', '1150.homiliubok.rel-ser.psd', '1210.jartein.rel-sag.psd', '1210.thorlakur.rel-sag.psd', '1250.sturlunga.nar-sag.psd']
+#+END_result
 
 We can also get the contents of a file by name:[fn:1b3625ef]
 
-#+begin_src python
-my_loader.file("foo.psd")[0:100]
+#+begin_src python :exports both
+my_loader.file("1150.firstgrammar.sci-lin.psd")[0:100]
 #+end_src
+
+#+RESULTS:
+#+BEGIN_result
+
+( (IP-MAT (PP (P Í-í)
+	      (NP (QS-D flestum-margur) (NS-D löndum-land)))
+	  (VBPI setja-setja)
+
+#+END_result
 
 [fn:1b3625ef] Here we are displaying just the first 100 characters of the file, to avoid cluttering the document with a very long output.
 
@@ -103,12 +121,17 @@ The final functionality which a loader provides is to transform the files it acc
 By default, all available files will be included.
 If you want a =Corpus= containing trees from just a single file, or set of files, you can pass a string or list to the =corpus= function.
 
+*************** TODO use the ipython backend here to get nice html results :noexport:
+*************** END
+
 #+begin_src python
 my_corpus = my_loader.corpus()
 #+end_src
 
+#+RESULTS:
+
 Details about the file formats that Lovett understands are presented elsewhere in the documentation.
-*************** TODO link
+*************** TODO link                                          :noexport:
 *************** END
 
 * Corpus objects

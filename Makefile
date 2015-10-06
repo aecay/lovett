@@ -5,22 +5,22 @@ doc:
 	SPHINX_APIDOC_OPTIONS=members,undoc-members,private-members sphinx-apidoc -o doc/build/api --separate --private lovett lovett/tests
 	emacs -Q --script doc/org/export-doc.el
 
-doc-clean:
-	rm -r doc-out
+doc-push: doc-html
+	[ -d /tmp/lovett-doc-git ] || git clone git@github.com:aecay/lovett.git /tmp/lovett-doc-git
+	export PWD=`pwd`
+	cd /tmp/lovett-doc-git; \
+	git checkout master;
+	git pull; \
+	git checkout docs ; \
+	git merge master; \
+	mkdir -p doc-built
+	cp -r doc/build/* /tmp/lovett-doc-git/doc-built
+	cp doc/conf.py /tmp/lovett-doc-git/doc-built
+	cd /tmp/lovett-doc-git; \
+	git add doc-built; \
+	git commit -m "Autobuild documentation"; \
+	git push
 
-doc-push:
-	git clone https://github.com/aecay/lovett.git doc-git
-	cd doc-git
-	git config user.name "Travis CI"
-	git config user.email "aaronecay+travis@gmail.com"
-	git checkout docs
-	rm -r *
-	cp ../doc/build/* .
-	cp ../doc/conf.py .
-	git add .
-	git commit -m "Autobuild documentation"
-	git push "https://${GH_TOKEN}@${GH_REF}" > /dev/null
-
-doc-local: doc
+doc-html: doc
 	cp doc/conf.py doc/build
 	sphinx-build -b html doc/build doc/html

@@ -1,21 +1,20 @@
 ;; (setq debug-on-error t)
-(make-directory "lovett-emacs" t)
-(setq user-emacs-directory "lovett-emacs")
+(make-directory "/tmp/lovett-emacs" t)
+(setq user-emacs-directory "/tmp/lovett-emacs")
 
 (require 'package)
 (setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
                          ("melpa" . "https://melpa.org/packages/")))
 (setq package-user-dir (locate-user-emacs-file "elpa"))
 (package-initialize)
-(package-refresh-contents nil)
+(unless (and (package-installed-p 'org)
+             (package-installed-p 'ox-rst))
+  (package-refresh-contents nil)
+  (with-demoted-errors "Error: %S"
+    (package-install 'org)
+    (package-install 'ox-rst)))
 
-(defun package--compile (&rest _)
-  nil)
-
-(with-demoted-errors "Error: %S"
-  (package-install 'org)
-  (package-install 'ox-rst))
-
+(require 'org-inlinetask)
 (require 'ox-publish)
 (require 'ox-rst)
 
@@ -35,19 +34,26 @@
 CONTENTS is the transcoded contents string.  INFO is a plist
 holding export options."
   (concat
-   ;; Build title block.
-   (concat (org-rst-template--document-title info)
-           ;; 2. Table of contents.
+    (concat (org-rst-template--document-title info)
            (let ((depth (plist-get info :with-toc)))
              (when depth "\n.. contents::\n")))
+   ;; Added these blank lines to avoid problems
    "\n\n"
-   ;; Document's body.
    contents
-   ;; Creator.  Justify it to the bottom right.
    (and (plist-get info :with-creater)
         (concat
          "\n    :Creator: "
          (plist-get info :creator) "\n"))))
+
+(defun org-rst-special-block (special-block contents info)
+  ;; TODO
+  (let ((type (downcase (org-element-property :type special-block))))
+    (if (string= type "result")
+        (format ".. code-block:: none
+
+%s" (replace-regexp-in-string "^" "   " contents))
+      contents))
+  )
 
 (let ((dir (file-name-directory (or load-file-name
                                     (buffer-file-name))))

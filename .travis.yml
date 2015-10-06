@@ -1,3 +1,6 @@
+notifications:
+  email: false
+
 language: python
 python:
   - "3.3"
@@ -6,49 +9,4 @@ python:
 
 install: "pip install -r requirements.txt"
 script:
-  - curl -o travis_after_all.py https://raw.githubusercontent.com/dmakhno/travis_after_all/master/travis_after_all.py
   - nosetests
-
-after_success:
-  - "make doc"
-  - "make doc-push"
-
-secure: "DUm8EDu6YRlfXk/BoGy7fsTtuMKWyjaMwkjKAKuDq/+vBAouTY163j8xtSqbwEnyW7x1EfUM7S4dbz+e77S6X1pxbf1i+29swk+LvTTNoLo11YqMtm+vZqQD+sCaf5ipq5TMv8Fjcpp1omGAXd3R3W4gMvNztRxGxmjV1wFe1hI="
-
-env:
-  GH_REF: github.com/aecay/lovett.git
-
-# All this stupidity is needed because of
-# https://github.com/travis-ci/travis-ci/issues/929
-after_success:
-  - python2 travis_after_all.py
-  - export $(cat .to_export_back)
-  - |
-      if [ "$BUILD_LEADER" = "YES" ]; then
-        if [ "$BUILD_AGGREGATE_STATUS" = "others_succeeded" ]; then
-          echo "All Succeded! PUBLISHING..."
-          pip install sphinx
-          sudo add-apt-repository -y ppa:ubuntu-elisp
-          sudo apt-get update -qq
-          sudo apt-get install -qq emacs-snapshot
-          make doc
-          rm -r lovett-emacs
-          make doc-push
-        else
-          echo "Some Failed"
-        fi
-      fi
-
-after_failure:
-  - python travis_after_all.py
-  - export $(cat .to_export_back)
-  - |
-      if [ "$BUILD_LEADER" = "YES" ]; then
-        if [ "$BUILD_AGGREGATE_STATUS" = "others_failed" ]; then
-          echo "All Failed"
-        else
-          echo "Some Failed"
-        fi
-      fi
-after_script:
-  - echo leader=$BUILD_LEADER status=$BUILD_AGGREGATE_STATUS
