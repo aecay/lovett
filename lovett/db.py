@@ -7,8 +7,8 @@ however:
 
 * The corpus is immutable.  It is only possible to append new trees to the end
   of the corpus (and in normal use even this should not be done).
-* The `matching_trees` methods for searching by evaluating a `Query` against
-  the corpus is significantly optimized by the database engine.
+* The `matching_trees` methods for searching by evaluating a `QueryFunction`
+  against the corpus is significantly optimized by the database engine.
 
 """
 

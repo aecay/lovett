@@ -21,8 +21,8 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
     """A base class for corpora.
 
     This class defines the (currently rather thin) interface that corpus
-    objects must implement.  It inherits from `Sequence`, since a corpus is an
-    (ordered) sequence of trees.
+    objects must implement.  It inherits from `collections.abc.Sequence`,
+    since a corpus is an (ordered) sequence of trees.
 
     .. note:: TODO
 
@@ -54,8 +54,8 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
     """A class representing a corpus.
 
     In addition to the sequence semantics inherited from the `CorpusBase`
-    class, this class also implements the `MutableSequence` interface,
-    allowing trees to be added and removed.
+    class, this class also implements the `collections.abc.MutableSequence`
+    interface, allowing trees to be added and removed.
 
     .. note::
 
@@ -103,7 +103,7 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
 
     # Instance methods
     def to_db(self):
-        """Return a `CorpusDB` object containing the trees from the corpus."""
+        """Return a `CorpusDb` object containing the trees from the corpus."""
         import lovett.db as db
         d = db.CorpusDb()
         for t in self._trees:
