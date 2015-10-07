@@ -39,13 +39,18 @@
           <div class="body" role="main">
             
   <h1>Source code for lovett.loader</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Methods to fetch corpora from the web, filesystem, or other sources.</span>
+<span class="sd">&quot;&quot;&quot;Methods to fetch corpora from the web, filesystem, or other sources.</span>
 
 <span class="sd">Currently includes:</span>
 
-<span class="sd">* A loader for local files (TODO)</span>
+<span class="sd">* A loader for local files</span>
 <span class="sd">* A loader for files from `IcePaHC &lt;http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)&gt;`_</span>
+
+<span class="sd">.. note:: TODO</span>
+
+<span class="sd">   It should be possible to associate a pipeline of functions from</span>
+<span class="sd">   ``transform.py`` with a corpus loader, and to specify e.g. the IcePaHC</span>
+<span class="sd">   loader as having the appropriate transforms built in.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -65,29 +70,40 @@
 <span class="c"># level?  Argument for putting it here: trees are expensive to create in</span>
 <span class="c"># memory(?), so we want to avoid slurping in many of them only to later</span>
 <span class="c"># discard.  But when would you ever want to load just a subset of trees into</span>
-<span class="c"># memory?</span>
+<span class="c"># memory? LATER NOTE: that makes no sense, since the tree must be created</span>
+<span class="c"># anyway in order to know whether we want to filter it.</span>
 
 
 <div class="viewcode-block" id="Loader"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.Loader">[docs]</a><span class="k">class</span> <span class="nc">Loader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;This is a base class for corpus loaders to inherit from.&quot;&quot;&quot;</span>
-    <span class="c"># TODO: do we also need a class to group together the cache-related methods?</span>
+    <span class="sd">&quot;&quot;&quot;This is a base class for corpus loaders to inherit from.</span>
+
+<span class="sd">    .. note:: TODO</span>
+
+<span class="sd">       * For speed/memory reasons , should this class have a method that</span>
+<span class="sd">         converts directly to a `CorpusDb` object, without passing through a</span>
+<span class="sd">         `Corpus` first?</span>
+<span class="sd">       * Is there a way to use the superclass to implement the caching?  Perhaps</span>
+<span class="sd">         it&#39;s too much hassle.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="nd">@abc.abstractmethod</span>
 <div class="viewcode-block" id="Loader.file"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.Loader.file">[docs]</a>    <span class="k">def</span> <span class="nf">file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the content of one of the files from a corpus.</span>
 
-<span class="sd">        This method must use caching if it makes network requests or uses other</span>
-<span class="sd">        expensive resources (beyond disk access).</span>
+<span class="sd">        This method must use caching if it makes network requests or uses</span>
+<span class="sd">        other expensive resources (beyond disk access).  Subclasses should</span>
+<span class="sd">        call the method defined on this class (via ``super()``) in order to</span>
+<span class="sd">        partake of common error checking code.</span>
 
-<span class="sd">        Args</span>
-<span class="sd">        ----</span>
-<span class="sd">        filename : str</span>
-<span class="sd">            The name of the file requested</span>
+<span class="sd">        Args:</span>
+<span class="sd">            filename (str): The name of the file requested.</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        str</span>
-<span class="sd">            The file&#39;s content&quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The file&#39;s content.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Invalid filename&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@abc.abstractmethod</span>
 <div class="viewcode-block" id="Loader.files"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.Loader.files">[docs]</a>    <span class="k">def</span> <span class="nf">files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -96,25 +112,25 @@
 <span class="sd">        This method must use caching if it makes network requests or uses other</span>
 <span class="sd">        expensive resources (beyond disk access).</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        list of str</span>
-<span class="sd">            List of filenames&quot;&quot;&quot;</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list of str: List of filenames.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 </div>
 <div class="viewcode-block" id="Loader.corpus"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.Loader.corpus">[docs]</a>    <span class="k">def</span> <span class="nf">corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load files into a ``Corpus``.</span>
+        <span class="sd">&quot;&quot;&quot;Load files into a `Corpus`.</span>
 
-<span class="sd">        Args</span>
-<span class="sd">        ----</span>
-<span class="sd">        files : str or list of str</span>
-<span class="sd">            The files to include in the corpus.  Default is to include all</span>
-<span class="sd">            available files.</span>
+<span class="sd">        .. note:: TODO</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Corpus</span>
-<span class="sd">            The corpus composed of all trees in all files.</span>
+<span class="sd">           Handle file-level metadata in this method (need a specification of</span>
+<span class="sd">           how this appears in the files as well).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files (str or list of str): The files to include in the corpus.</span>
+<span class="sd">                Default is to include all available files.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Corpus: The corpus composed of all trees in all files.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">corpus</span><span class="o">.</span><span class="n">Corpus</span><span class="p">([])</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -125,12 +141,8 @@
                 <span class="n">tree_obj</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">tree_string</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">tree_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">tree_obj</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="nb">file</span>
-                    <span class="c"># TODO: file-level metadata</span>
                     <span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tree_obj</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">c</span>
-
-    <span class="c"># TODO: a method for converting directly to an indexed corpus, for</span>
-    <span class="c"># speed/mem optimization?</span>
 
 
 <span class="c"># TODO: add a method to allow authentication, for private repos</span></div></div>
@@ -142,23 +154,21 @@
 <div class="viewcode-block" id="GithubLoader.__init__"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.GithubLoader.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="s">&quot;master&quot;</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s">&quot;.psd&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize a GithubLoader.</span>
 
-<span class="sd">        Args</span>
-<span class="sd">        ----</span>
-<span class="sd">        user : str</span>
-<span class="sd">            Github username of the repository to load from</span>
-<span class="sd">        repo : str</span>
-<span class="sd">            Name of the repository to load from</span>
-<span class="sd">        tag : str</span>
-<span class="sd">            A git ref of the revision to fetch.  Defaults to &quot;master&quot;, the</span>
-<span class="sd">            latest revision.  If the repository uses git tags, you can request</span>
-<span class="sd">            a specific version of the corpus.  You can also use a sha1 hash to</span>
-<span class="sd">            request a specific revision.</span>
-<span class="sd">        directory : str</span>
-<span class="sd">            Path to the directory containing parsed files.  (TODO: support</span>
-<span class="sd">            corpora with parsed files in more than one directory.)</span>
-<span class="sd">        extension : str</span>
-<span class="sd">            File extension of corpus files.  Defaults to &quot;.psd&quot;.  (TODO:</span>
-<span class="sd">            support multiple extensions.)</span>
+<span class="sd">        .. note:: TODO</span>
+
+<span class="sd">           * support corpora with parsed files in more than one directory</span>
+<span class="sd">           * support corpora with more than one kind of file extension</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            user (str): Github username of the repository to load from</span>
+<span class="sd">            repo (str): Name of the repository to load from.</span>
+<span class="sd">            tag (str): A git ref of the revision to fetch.</span>
+<span class="sd">                Defaults to &quot;master&quot;, the latest revision.  If the repository</span>
+<span class="sd">                uses git tags, you can request a specific version of the</span>
+<span class="sd">                corpus.  You can also use a sha1 hash to request a specific</span>
+<span class="sd">                revision.</span>
+<span class="sd">            directory (str): Path to the directory containing parsed files.</span>
+<span class="sd">            extension (str): File extension of corpus files. Defaults to &quot;.psd&quot;.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_user</span> <span class="o">=</span> <span class="n">user</span>
@@ -170,9 +180,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_file_content</span> <span class="o">=</span> <span class="p">{}</span>
 </div>
 <div class="viewcode-block" id="GithubLoader.file"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.GithubLoader.file">[docs]</a>    <span class="k">def</span> <span class="nf">file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">filename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">():</span>
-            <span class="c"># TODO: do this check for all loaders</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Invalid filename&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_content</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_content</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;https://raw.githubusercontent.com/</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span>
@@ -216,7 +224,16 @@
 
 
 <div class="viewcode-block" id="FileLoader"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.FileLoader">[docs]</a><span class="k">class</span> <span class="nc">FileLoader</span><span class="p">(</span><span class="n">Loader</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A loader for corpus files from the local filesystem.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;A loader for corpus files from the local filesystem.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): path to the directory where the corpus files can be found.</span>
+<span class="sd">        extension (str): the file extension used by the corpus.  Defaults</span>
+<span class="sd">            to ``.psd``, which is the Penn Historical Corpora standrad.</span>
+<span class="sd">        recursive (bool): whether to search for files in ``path`` recursively,</span>
+<span class="sd">            or only consider files immediately contained therein.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="FileLoader.__init__"><a class="viewcode-back" href="../../api/lovett.loader.html#lovett.loader.FileLoader.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="s">&quot;.psd&quot;</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_extension</span> <span class="o">=</span> <span class="n">extension</span>

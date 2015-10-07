@@ -45,7 +45,7 @@
 <p>This module contains the Lovett query language.</p>
 <p>Query functions are defined as classes which inherit from <a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><code class="xref any py py-class docutils literal"><span class="pre">QueryFunction</span></code></a>.
 Each query function must operate in two modes.  These functions are not
-accessed directly, but rather through the <code class="xref any docutils literal"><span class="pre">matching_trees</span></code>
+accessed directly, but rather through the <a class="reference internal" href="lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees" title="lovett.corpus.CorpusBase.matching_trees"><code class="xref any py py-meth docutils literal"><span class="pre">matching_trees</span></code></a>
 method of <a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus"><code class="xref any py py-class docutils literal"><span class="pre">Corpus</span></code></a> objects (which dispatches to the appropriate mode).</p>
 <p>The first mode is <em>direct mode</em>, which is accessed through the
 <a class="reference internal" href="#lovett.query.QueryFunction.match_tree" title="lovett.query.QueryFunction.match_tree"><code class="xref any py py-meth docutils literal"><span class="pre">QueryFunction.match_tree</span></code></a> function.  This function receives as an argument a

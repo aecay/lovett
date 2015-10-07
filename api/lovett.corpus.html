@@ -42,15 +42,79 @@
             
   <div class="section" id="module-lovett.corpus">
 <span id="lovett-corpus-module"></span><h1>lovett.corpus module<a class="headerlink" href="#module-lovett.corpus" title="Permalink to this headline">¶</a></h1>
+<p>Objects for representing a corpus (list of trees).</p>
+<p>TODO: write more here</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<ul class="last">
+<li><p class="first">smart iteration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">corpus</span><span class="o">.</span><span class="n">trees</span><span class="p">()</span> <span class="k">as</span> <span class="n">trees</span><span class="p">:</span>
+    <span class="n">trees</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="n">trees</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 <dl class="class">
 <dt id="lovett.corpus.CorpusBase">
 <em class="property">class </em><code class="descname">CorpusBase</code><a class="reference internal" href="../_modules/lovett/corpus.html#CorpusBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.CorpusBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A base class for corpora.</p>
+<p>This class defines the (currently rather thin) interface that corpus
+objects must implement.  It inherits from <a class="reference external" href="https://docs.python.org/3.5/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.5)"><code class="xref any docutils literal"><span class="pre">collections.abc.Sequence</span></code></a>,
+since a corpus is an (ordered) sequence of trees.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p>The ordering over trees in the corpus isn&#8217;t total, since there&#8217;s not
+really a well-defined order across texts.  It would be nice to express
+this programmatically somehow.</p>
+<p>It would be good to use a doubly-linked list structure here, to allow
+fecthing next/previous tree in constant time.  The alternative is for
+trees to know their index within the corpus, which is not really what
+we want if a tree can belong to multiple corpora e.g. when a search
+yields a (sub)corpus as a result.  But see the note above about the
+lack of total ordering...maybe we just have to impose one.</p>
+<p class="last">It would be nice to allow a functionality like the <code class="docutils literal"><span class="pre">fix()</span></code> function
+in the R console, which pops up an editor for a piece of data.  We
+could attempt something similar, whereby the IPython console pops up a
+new browser window running an instance of Annotald, which allows you to
+edit and save back a tree.  But this will be a bit tricky...</p>
+</div>
+<dl class="method">
+<dt id="lovett.corpus.CorpusBase.matching_trees">
+<code class="descname">matching_trees</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/corpus.html#CorpusBase.matching_trees"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.CorpusBase.matching_trees" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="lovett.corpus.Corpus">
 <em class="property">class </em><code class="descname">Corpus</code><span class="sig-paren">(</span><em>trees</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/corpus.html#Corpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.Corpus" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>A class representing a corpus.</p>
+<p>In addition to the sequence semantics inherited from the <a class="reference internal" href="#lovett.corpus.CorpusBase" title="lovett.corpus.CorpusBase"><code class="xref any py py-class docutils literal"><span class="pre">CorpusBase</span></code></a>
+class, this class also implements the <a class="reference external" href="https://docs.python.org/3.5/library/collections.abc.html#collections.abc.MutableSequence" title="(in Python v3.5)"><code class="xref any docutils literal"><span class="pre">collections.abc.MutableSequence</span></code></a>
+interface, allowing trees to be added and removed.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is a different issue than whether trees themselves can be changed;
+the trees are implemented as mutable objects.  The question rather is
+whether the number and sequence of trees in the corpus can be changed.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>trees</strong> (list of <a class="reference internal" href="lovett.tree.html#lovett.tree.Tree" title="lovett.tree.Tree"><code class="xref any py py-class docutils literal"><span class="pre">Tree</span></code></a>) &#8211; the trees in this corpus.</li>
+<li><strong>metadata</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; the corpus metadata.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
 <dt id="lovett.corpus.Corpus.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>trees</em>, <em>metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/corpus.html#Corpus.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.Corpus.__init__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -98,12 +162,28 @@
 <dl class="method">
 <dt id="lovett.corpus.Corpus.to_db">
 <code class="descname">to_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/corpus.html#Corpus.to_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.Corpus.to_db" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Return a <a class="reference internal" href="lovett.db.html#lovett.db.CorpusDb" title="lovett.db.CorpusDb"><code class="xref any py py-class docutils literal"><span class="pre">CorpusDb</span></code></a> object containing the trees from the corpus.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="lovett.corpus.Corpus.write_penn_treebank">
 <code class="descname">write_penn_treebank</code><span class="sig-paren">(</span><em>handle</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/corpus.html#Corpus.write_penn_treebank"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.corpus.Corpus.write_penn_treebank" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Write the tree in Penn Historical Corpus format to a file.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">implement this.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>handle</strong> (<em>writable</em>) &#8211; an object with a <code class="docutils literal"><span class="pre">write</span></code> method where the
+trees should be written</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 

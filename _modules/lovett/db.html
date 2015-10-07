@@ -39,6 +39,20 @@
           <div class="body" role="main">
             
   <h1>Source code for lovett.db</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Representing a corpus as an indexed database.</span>
+
+<span class="sd">This module provides the means for representing a corpus as an indexed</span>
+<span class="sd">database: the `CorpusDb`.  At a high level, this provides the same interface</span>
+<span class="sd">as a regular `Corpus` object: a sequence of trees.  There are some differences</span>
+<span class="sd">however:</span>
+
+<span class="sd">* The corpus is immutable.  It is only possible to append new trees to the end</span>
+<span class="sd">  of the corpus (and in normal use even this should not be done).</span>
+<span class="sd">* The `matching_trees` methods for searching by evaluating a `QueryFunction`</span>
+<span class="sd">  against the corpus is significantly optimized by the database engine.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
 <span class="kn">import</span> <span class="nn">sqlalchemy</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">MetaData</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">select</span>
@@ -49,6 +63,33 @@
 
 
 <div class="viewcode-block" id="CorpusDb"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb">[docs]</a><span class="k">class</span> <span class="nc">CorpusDb</span><span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">CorpusBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class implementing an indexed corpus.</span>
+
+<span class="sd">    In order to operate, this class uses the `SQLite</span>
+<span class="sd">    &lt;https://www.sqlite.org/&gt;`_ database engine, wrapped by the `sqlalchemy</span>
+<span class="sd">    Python library &lt;http://www.sqlalchemy.org/&gt;`_ (except for a few raw SQL</span>
+<span class="sd">    statements, which in principle should be removed to the extent possible).</span>
+<span class="sd">    Using SQLite brings the benefit of a mature and heavily optimized indexing</span>
+<span class="sd">    engine.  SQLAlchemy provides a flexible programmatic interface for</span>
+<span class="sd">    building SQL queries, eliminating the need to munge strings manually.</span>
+
+<span class="sd">    The indexing strategy is described in the documentation at `indexing`.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        engine (`sqlalchemy.engine.Engine`): the database engine (*private*)</span>
+<span class="sd">        metadata (`sqlalchemy.schema.MetaData`): metadata (*private*)</span>
+<span class="sd">        nodes (`sqlalchemy.schema.Table`): a table listing each node in</span>
+<span class="sd">            the corpus.  Columns: ``rowid``, ``label``.</span>
+<span class="sd">        dom (`sqlalchemy.schema.Table`): reflexive dominance.  Columns:</span>
+<span class="sd">            ``parent``, ``child``, ``depth``</span>
+<span class="sd">        sprec (`sqlalchemy.schema.Table`): reflexive sister-precedence.</span>
+<span class="sd">            Columns: ``left``, ``right``, ``distance``.</span>
+<span class="sd">        roots (`sqlalchemy.schema.Table`): the root nodes in the corpus.</span>
+<span class="sd">            Columns: ``id``.</span>
+<span class="sd">        metadata (`sqlalchemy.schema.Table`): metadata for each node.</span>
+<span class="sd">            Columns: ``id``, ``key``, ``value``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="CorpusDb.__init__"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="s">&quot;sqlite:///:memory:&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">MetaData</span><span class="p">()</span>
@@ -70,9 +111,22 @@
                                    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;key&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">),</span>
                                    <span class="n">Column</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
-
-    <span class="c"># TODO: use triggers instead of _add_child and _add_sibling</span></div>
+</div>
 <div class="viewcode-block" id="CorpusDb._add_child"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb._add_child">[docs]</a>    <span class="k">def</span> <span class="nf">_add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a parent-child relationship to the database.</span>
+
+<span class="sd">        This method and `_add_sibling` are responsible for maintaining the</span>
+<span class="sd">        dominance and sister-precendece tables.</span>
+
+<span class="sd">        .. note:: TODO</span>
+
+<span class="sd">           We should use SQL triggers for this, instead of explicit method calls.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent (int): database id of the parent node.</span>
+<span class="sd">            child (int): database id of the child node.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="n">update</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
             <span class="sd">&quot;&quot;&quot;INSERT INTO dom (parent, child, depth)</span>
@@ -91,9 +145,23 @@
         <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">update</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">right</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CorpusDb._insert_node"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb._insert_node">[docs]</a>    <span class="k">def</span> <span class="nf">_insert_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert a node into the database.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            node (Tree): the node to be inserted.</span>
+<span class="sd">            parent (int): the database id of the parent node, if any.</span>
+<span class="sd">                Will be passed to `_add_child`.</span>
+<span class="sd">            left (int): the database id of the left sibling, if any.</span>
+<span class="sd">                Will be passed to `_add_sibling`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: the database id of the inserted node.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="c"># Insert this node&#39;s label into the db</span>
         <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">insert</span><span class="p">(),</span> <span class="n">label</span><span class="o">=</span><span class="n">node</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="c"># Get the database id.</span>
         <span class="n">rowid</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s">&quot;SELECT last_insert_rowid()&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
         <span class="c"># Add it to the dominance_R table</span>
         <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">insert</span><span class="p">(),</span> <span class="n">parent</span><span class="o">=</span><span class="n">rowid</span><span class="p">,</span> <span class="n">child</span><span class="o">=</span><span class="n">rowid</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -115,19 +183,43 @@
         <span class="k">return</span> <span class="n">rowid</span>
 </div>
 <div class="viewcode-block" id="CorpusDb.insert_tree"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb.insert_tree">[docs]</a>    <span class="k">def</span> <span class="nf">insert_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Insert a tree into the corpus.</span>
+
+<span class="sd">        This method wraps `_insert_node`, and also handles adding the root to</span>
+<span class="sd">        the appropriate table.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">rowid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_node</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="o">.</span><span class="n">insert</span><span class="p">(),</span> <span class="nb">id</span><span class="o">=</span><span class="n">rowid</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CorpusDb._reconstitute"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb._reconstitute">[docs]</a>    <span class="k">def</span> <span class="nf">_reconstitute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rowid</span><span class="p">):</span>
-        <span class="c"># TODO: handle metadata</span>
+        <span class="sd">&quot;&quot;&quot;Create a `Tree` from the database.</span>
+
+<span class="sd">        This function takes an entry in the database and constructs a Python</span>
+<span class="sd">        object containing its structure.</span>
+
+<span class="sd">        .. note:: TODO</span>
+
+<span class="sd">           This function does not handle metadata yet (other than the &quot;text&quot;</span>
+<span class="sd">           metadata which is used to store the text of leaf nodes).</span>
+
+<span class="sd">           It also relies on the assumption that database ids are</span>
+<span class="sd">           monotonically increasing as trees are added to the database.  This</span>
+<span class="sd">           is valid as long as `CorpusDb` is not mutable.  However, in the</span>
+<span class="sd">           (unlikely) event that we decide to make indexed corpora, and the</span>
+<span class="sd">           trees that are contained therein, mutable, it will be necessary to</span>
+<span class="sd">           revisit this assumption.</span>
+
+<span class="sd">           Finally, to reflect the immutability of the corpus, it would be</span>
+<span class="sd">           ideal if `Tree` objects returned by this function could arrange to</span>
+<span class="sd">           raise an exception on attempted modifications.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="n">label</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
             <span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">label</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span> <span class="o">==</span> <span class="n">rowid</span><span class="p">)</span>
         <span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c"># TODO: possibly bogus optimization assuming that nodes are always</span>
-        <span class="c"># inserted into the DB in order.  If we allow mutable databases, this</span>
-        <span class="c"># will need to be changed.</span>
         <span class="n">children</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
             <span class="n">select</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">child</span><span class="p">])</span><span class="o">.</span>
             <span class="n">where</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">depth</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dom</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">parent</span> <span class="o">==</span> <span class="n">rowid</span><span class="p">))</span><span class="o">.</span>
@@ -155,9 +247,9 @@
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">sql</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s">&quot;SELECT * FROM roots&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">fetchall</span><span class="p">())</span>
 
-    <span class="c"># Instance methods</span>
-</div>
+    <span class="c"># Instance methods</span></div>
 <div class="viewcode-block" id="CorpusDb.to_corpus"><a class="viewcode-back" href="../../api/lovett.db.html#lovett.db.CorpusDb.to_corpus">[docs]</a>    <span class="k">def</span> <span class="nf">to_corpus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert to a `Corpus`.&quot;&quot;&quot;</span>
         <span class="n">c</span> <span class="o">=</span> <span class="n">corpus</span><span class="o">.</span><span class="n">Corpus</span><span class="p">([])</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>

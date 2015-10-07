@@ -45,26 +45,46 @@
 <p>Methods to fetch corpora from the web, filesystem, or other sources.</p>
 <p>Currently includes:</p>
 <ul class="simple">
-<li>A loader for local files (TODO)</li>
+<li>A loader for local files</li>
 <li>A loader for files from <a class="reference external" href="http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)">IcePaHC</a></li>
 </ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">It should be possible to associate a pipeline of functions from
+<code class="docutils literal"><span class="pre">transform.py</span></code> with a corpus loader, and to specify e.g. the IcePaHC
+loader as having the appropriate transforms built in.</p>
+</div>
 <dl class="class">
 <dt id="lovett.loader.Loader">
 <em class="property">class </em><code class="descname">Loader</code><a class="reference internal" href="../_modules/lovett/loader.html#Loader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a base class for corpus loaders to inherit from.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<ul class="last simple">
+<li>For speed/memory reasons , should this class have a method that
+converts directly to a <a class="reference internal" href="lovett.db.html#lovett.db.CorpusDb" title="lovett.db.CorpusDb"><code class="xref any py py-class docutils literal"><span class="pre">CorpusDb</span></code></a> object, without passing through a
+<a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus"><code class="xref any py py-class docutils literal"><span class="pre">Corpus</span></code></a> first?</li>
+<li>Is there a way to use the superclass to implement the caching?  Perhaps
+it&#8217;s too much hassle.</li>
+</ul>
+</div>
 <dl class="method">
 <dt id="lovett.loader.Loader.file">
 <code class="descname">file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#Loader.file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader.file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the content of one of the files from a corpus.</p>
-<p>This method must use caching if it makes network requests or uses other
-expensive resources (beyond disk access).</p>
+<p>This method must use caching if it makes network requests or uses
+other expensive resources (beyond disk access).  Subclasses should
+call the method defined on this class (via <code class="docutils literal"><span class="pre">super()</span></code>) in order to
+partake of common error checking code.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; The name of the file requested</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; The name of the file requested.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The file&#8217;s content</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The file&#8217;s content.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)">str</a></td>
 </tr>
@@ -82,7 +102,7 @@ expensive resources (beyond disk access).</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of filenames</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">List of filenames.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list of str</td>
 </tr>
@@ -93,13 +113,19 @@ expensive resources (beyond disk access).</p>
 <dl class="method">
 <dt id="lovett.loader.Loader.corpus">
 <code class="descname">corpus</code><span class="sig-paren">(</span><em>files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#Loader.corpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.Loader.corpus" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load files into a <code class="docutils literal"><span class="pre">Corpus</span></code>.</p>
+<dd><p>Load files into a <a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus"><code class="xref any py py-class docutils literal"><span class="pre">Corpus</span></code></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">Handle file-level metadata in this method (need a specification of
+how this appears in the files as well).</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>files</strong> (<em>str or list of str</em>) &#8211; The files to include in the corpus.  Default is to include all
-available files.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>files</strong> (<em>str or list of str</em>) &#8211; The files to include in the corpus.
+Default is to include all available files.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The corpus composed of all trees in all files.</td>
 </tr>
@@ -119,21 +145,28 @@ available files.</td>
 <dt id="lovett.loader.GithubLoader.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>user</em>, <em>repo</em>, <em>ref='master'</em>, <em>directory=''</em>, <em>extension='.psd'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#GithubLoader.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.GithubLoader.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a GithubLoader.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<ul class="last simple">
+<li>support corpora with parsed files in more than one directory</li>
+<li>support corpora with more than one kind of file extension</li>
+</ul>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>user</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Github username of the repository to load from</li>
-<li><strong>repo</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Name of the repository to load from</li>
-<li><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; A git ref of the revision to fetch.  Defaults to &#8220;master&#8221;, the
-latest revision.  If the repository uses git tags, you can request
-a specific version of the corpus.  You can also use a sha1 hash to
-request a specific revision.</li>
-<li><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Path to the directory containing parsed files.  (TODO: support
-corpora with parsed files in more than one directory.)</li>
-<li><strong>extension</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; File extension of corpus files.  Defaults to &#8221;.psd&#8221;.  (TODO:
-support multiple extensions.)</li>
+<li><strong>repo</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Name of the repository to load from.</li>
+<li><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; A git ref of the revision to fetch.
+Defaults to &#8220;master&#8221;, the latest revision.  If the repository
+uses git tags, you can request a specific version of the
+corpus.  You can also use a sha1 hash to request a specific
+revision.</li>
+<li><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Path to the directory containing parsed files.</li>
+<li><strong>extension</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; File extension of corpus files. Defaults to &#8221;.psd&#8221;.</li>
 </ul>
 </td>
 </tr>
@@ -174,6 +207,21 @@ corpus.</p>
 <dt id="lovett.loader.FileLoader">
 <em class="property">class </em><code class="descname">FileLoader</code><span class="sig-paren">(</span><em>path</em>, <em>extension='.psd'</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader" title="Permalink to this definition">¶</a></dt>
 <dd><p>A loader for corpus files from the local filesystem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; path to the directory where the corpus files can be found.</li>
+<li><strong>extension</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; the file extension used by the corpus.  Defaults
+to <code class="docutils literal"><span class="pre">.psd</span></code>, which is the Penn Historical Corpora standrad.</li>
+<li><strong>recursive</strong> (<a class="reference external" href="https://docs.python.org/3.5/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; whether to search for files in <code class="docutils literal"><span class="pre">path</span></code> recursively,
+or only consider files immediately contained therein.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 <dl class="method">
 <dt id="lovett.loader.FileLoader.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>path</em>, <em>extension='.psd'</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/loader.html#FileLoader.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.loader.FileLoader.__init__" title="Permalink to this definition">¶</a></dt>

@@ -42,6 +42,43 @@
             
   <div class="section" id="module-lovett.transform">
 <span id="lovett-transform-module"></span><h1>lovett.transform module<a class="headerlink" href="#module-lovett.transform" title="Permalink to this headline">¶</a></h1>
+<p>Tree transformations to accommodate various corpus formats.</p>
+<p>The functions in this module operate on <a class="reference internal" href="lovett.tree.html#lovett.tree.Tree" title="lovett.tree.Tree"><code class="xref any py py-class docutils literal"><span class="pre">Tree</span></code></a> objects which have been read
+from a corpus file in a known format.  Certain data is represented
+conventionally (and idiosyncratically) in these corpora; these functions
+convert this data into more useful metadata entries.</p>
+<p>The following corpora are supported by the following functions:</p>
+<ul class="simple">
+<li>IcePaHC
+* <a class="reference internal" href="#lovett.transform.icepahc_case" title="lovett.transform.icepahc_case"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_case</span></code></a>
+* <a class="reference internal" href="#lovett.transform.icepahc_lemma" title="lovett.transform.icepahc_lemma"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_lemma</span></code></a>
+* <a class="reference internal" href="#lovett.transform.icepahc_year" title="lovett.transform.icepahc_year"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_year</span></code></a></li>
+<li>General utility
+* <a class="reference internal" href="#lovett.transform.ensure_id" title="lovett.transform.ensure_id"><code class="xref any py py-func docutils literal"><span class="pre">ensure_id</span></code></a></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p>To support:</p>
+<ul class="last simple">
+<li>IcePaHC: icepahc_word_splits</li>
+<li>PPCHE (generally): ppche_make_unicode, ppche_word_splits</li>
+<li>YCOE: ycoe_case</li>
+<li>PCEEC: pceec_metadata</li>
+</ul>
+</div>
+<dl class="data">
+<dt id="lovett.transform.ICEPAHC_CASE_LABELS">
+<code class="descname">ICEPAHC_CASE_LABELS</code><em class="property"> = {'NPR', 'NPRS', 'Q', 'D', 'NS', 'N'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASE_LABELS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Category labels which can bear case in IcePaHC.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.transform.ICEPAHC_CASES">
+<code class="descname">ICEPAHC_CASES</code><em class="property"> = {'D': 'dative', 'A': 'accusative', 'N': 'nominative', 'G': 'genitive'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASES" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping between dash tags and case metadata values in IcePaHC.</p>
+</dd></dl>
+
 <dl class="function">
 <dt id="lovett.transform._icepahc_case_do">
 <code class="descname">_icepahc_case_do</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#_icepahc_case_do"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform._icepahc_case_do" title="Permalink to this definition">¶</a></dt>

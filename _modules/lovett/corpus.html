@@ -39,40 +39,84 @@
           <div class="body" role="main">
             
   <h1>Source code for lovett.corpus</h1><div class="highlight"><pre>
-<span class="c"># Functions for corpus as list of trees</span>
+<span class="sd">&quot;&quot;&quot;Objects for representing a corpus (list of trees).</span>
+
+<span class="sd">TODO: write more here</span>
+
+<span class="sd">.. note:: TODO</span>
+
+<span class="sd">   - smart iteration::</span>
+
+<span class="sd">         with corpus.trees() as trees:</span>
+<span class="sd">             trees.map(...)</span>
+<span class="sd">             trees.filter(...)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">collections.abc</span>
 <span class="kn">import</span> <span class="nn">lovett.tree</span>
 
 
-<span class="c"># TODOs:</span>
-<span class="c"># - smart iteration: with corpus.trees() as trees: trees.map(...), trees.filter(...)</span>
-
-
 <div class="viewcode-block" id="CorpusBase"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.CorpusBase">[docs]</a><span class="k">class</span> <span class="nc">CorpusBase</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
-    <span class="c"># TODO</span>
-    <span class="c"># @abc.abstractmethod</span>
-    <span class="c"># def matching_trees(query):</span>
-    <span class="c">#     pass</span>
+    <span class="sd">&quot;&quot;&quot;A base class for corpora.</span>
 
-    <span class="k">pass</span>
+<span class="sd">    This class defines the (currently rather thin) interface that corpus</span>
+<span class="sd">    objects must implement.  It inherits from `collections.abc.Sequence`,</span>
+<span class="sd">    since a corpus is an (ordered) sequence of trees.</span>
 
-</div>
+<span class="sd">    .. note:: TODO</span>
+
+<span class="sd">       The ordering over trees in the corpus isn&#39;t total, since there&#39;s not</span>
+<span class="sd">       really a well-defined order across texts.  It would be nice to express</span>
+<span class="sd">       this programmatically somehow.</span>
+
+<span class="sd">       It would be good to use a doubly-linked list structure here, to allow</span>
+<span class="sd">       fecthing next/previous tree in constant time.  The alternative is for</span>
+<span class="sd">       trees to know their index within the corpus, which is not really what</span>
+<span class="sd">       we want if a tree can belong to multiple corpora e.g. when a search</span>
+<span class="sd">       yields a (sub)corpus as a result.  But see the note above about the</span>
+<span class="sd">       lack of total ordering...maybe we just have to impose one.</span>
+
+<span class="sd">       It would be nice to allow a functionality like the ``fix()`` function</span>
+<span class="sd">       in the R console, which pops up an editor for a piece of data.  We</span>
+<span class="sd">       could attempt something similar, whereby the IPython console pops up a</span>
+<span class="sd">       new browser window running an instance of Annotald, which allows you to</span>
+<span class="sd">       edit and save back a tree.  But this will be a bit tricky...</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># TODO @abc.abstractmethod</span>
+<div class="viewcode-block" id="CorpusBase.matching_trees"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees">[docs]</a>    <span class="k">def</span> <span class="nf">matching_trees</span><span class="p">(</span><span class="n">query</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+</div></div>
 <div class="viewcode-block" id="Corpus"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus">[docs]</a><span class="k">class</span> <span class="nc">Corpus</span><span class="p">(</span><span class="n">CorpusBase</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">MutableSequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A class representing a corpus.</span>
+
+<span class="sd">    In addition to the sequence semantics inherited from the `CorpusBase`</span>
+<span class="sd">    class, this class also implements the `collections.abc.MutableSequence`</span>
+<span class="sd">    interface, allowing trees to be added and removed.</span>
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">       This is a different issue than whether trees themselves can be changed;</span>
+<span class="sd">       the trees are implemented as mutable objects.  The question rather is</span>
+<span class="sd">       whether the number and sequence of trees in the corpus can be changed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        trees (list of `Tree`): the trees in this corpus.</span>
+<span class="sd">        metadata (dict): the corpus metadata.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="Corpus.__init__"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trees</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="c"># TODO: deparent all the trees (make copies first?) -- no</span>
-        <span class="c"># TODO: a separate class for a ResultSet? (contains copies of trees</span>
-        <span class="c"># from corpora, doesn&#39;t care about deparenting/setting ids/etc.)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_trees</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">trees</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span> <span class="o">=</span> <span class="n">lovett</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">Metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
 
     <span class="c"># Collection implementation</span></div>
 <div class="viewcode-block" id="Corpus.__getitem__"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trees</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-    <span class="c"># TODO: should a Corpus be mutable?  Probably yes, to allow building up of</span>
-    <span class="c"># corpora programmatically</span></div>
+</div>
 <div class="viewcode-block" id="Corpus.__setitem__"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus.__setitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_trees</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 </div>
@@ -95,11 +139,12 @@
 </div>
 <div class="viewcode-block" id="Corpus._repr_html_"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus._repr_html_">[docs]</a>    <span class="k">def</span> <span class="nf">_repr_html_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c"># TODO: link the word &quot;Corpus&quot; to the documentation?</span>
-        <span class="c"># TODO: tree viewer, one by one?</span>
+        <span class="c"># TODO: tree viewer, one by one (for first 10 trees)?</span>
         <span class="k">return</span> <span class="s">&quot;&quot;&quot;&lt;div class=&quot;corpus-repr&quot;&gt;A Corpus consisting of </span><span class="si">%s</span><span class="s"> trees&lt;/div&gt;&quot;&quot;&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="c"># Instance methods</span></div>
 <div class="viewcode-block" id="Corpus.to_db"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus.to_db">[docs]</a>    <span class="k">def</span> <span class="nf">to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a `CorpusDb` object containing the trees from the corpus.&quot;&quot;&quot;</span>
         <span class="kn">import</span> <span class="nn">lovett.db</span> <span class="kn">as</span> <span class="nn">db</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">CorpusDb</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trees</span><span class="p">:</span>
@@ -107,13 +152,18 @@
         <span class="k">return</span> <span class="n">d</span>
 </div>
 <div class="viewcode-block" id="Corpus.write_penn_treebank"><a class="viewcode-back" href="../../api/lovett.corpus.html#lovett.corpus.Corpus.write_penn_treebank">[docs]</a>    <span class="k">def</span> <span class="nf">write_penn_treebank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
-        <span class="c"># TODO: write the corpus in PTB format to the file or other writable</span>
-        <span class="c"># object handle</span>
-        <span class="k">pass</span>
+        <span class="sd">&quot;&quot;&quot;Write the tree in Penn Historical Corpus format to a file.</span>
 
-    <span class="c"># TODO: need parentindex, or move to doubly linked list structure</span>
-    <span class="c"># TODO: function to open read-only annotald window on corpus</span>
-    <span class="c"># TODO: allow writeback from annotald?</span></div></div>
+<span class="sd">        .. note:: TODO</span>
+
+<span class="sd">           implement this.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            handle (writable): an object with a ``write`` method where the</span>
+<span class="sd">                trees should be written</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
 </pre></div>
 
           </div>
