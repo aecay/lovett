@@ -11,6 +11,8 @@ import lovett.util as util
 # TODO: make md5 id for trees missing one
 ABSENT_ID = "LOVETT_MISSING_ID"
 
+# TODO: need read-only attribute for trees, from indexed corpora
+
 
 _METADATA_KEY_RX = re.compile("^[A-Z0-9-]+$")
 

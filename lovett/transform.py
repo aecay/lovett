@@ -1,11 +1,42 @@
+"""Tree transformations to accommodate various corpus formats.
+
+The functions in this module operate on `Tree` objects which have been read
+from a corpus file in a known format.  Certain data is represented
+conventionally (and idiosyncratically) in these corpora; these functions
+convert this data into more useful metadata entries.
+
+The following corpora are supported by the following functions:
+
+* IcePaHC
+  * `icepahc_case`
+  * `icepahc_lemma`
+  * `icepahc_year`
+
+* General utility
+  * `ensure_id`
+
+.. note:: TODO
+
+   To support:
+
+   * IcePaHC: icepahc_word_splits
+   * PPCHE (generally): ppche_make_unicode, ppche_word_splits
+   * YCOE: ycoe_case
+   * PCEEC: pceec_metadata
+
+"""
+
 from hashlib import md5
 
 import lovett.util as util
 
 
-# TODO: make sure this is complete
+# TODO: make sure ICEPAHC_CASE_LABELS is complete
+
+#: Category labels which can bear case in IcePaHC.
 ICEPAHC_CASE_LABELS = set(("N", "NS", "NPR", "NPRS", "Q", "D"))
 
+#: Mapping between dash tags and case metadata values in IcePaHC.
 ICEPAHC_CASES = {"N": "nominative",
                  "A": "accusative",
                  "D": "dative",
@@ -53,3 +84,5 @@ def icepahc_year(tree):
 def ensure_id(tree):
     if tree.id is None:
         tree.root.metadata.id = md5.new().update(tree.root.urtext).hexdigest()
+
+# TODO: ycoe_case

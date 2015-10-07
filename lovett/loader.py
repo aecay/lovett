@@ -1,10 +1,15 @@
-"""
-Methods to fetch corpora from the web, filesystem, or other sources.
+"""Methods to fetch corpora from the web, filesystem, or other sources.
 
 Currently includes:
 
-* A loader for local files (TODO)
+* A loader for local files
 * A loader for files from `IcePaHC <http://www.linguist.is/icelandic_treebank/Icelandic_Parsed_Historical_Corpus_(IcePaHC)>`_
+
+.. note:: TODO
+
+   It should be possible to associate a pipeline of functions from
+   ``transform.py`` with a corpus loader, and to specify e.g. the IcePaHC
+   loader as having the appropriate transforms built in.
 
 """
 
@@ -24,29 +29,40 @@ import lovett.tree as tree
 # level?  Argument for putting it here: trees are expensive to create in
 # memory(?), so we want to avoid slurping in many of them only to later
 # discard.  But when would you ever want to load just a subset of trees into
-# memory?
+# memory? LATER NOTE: that makes no sense, since the tree must be created
+# anyway in order to know whether we want to filter it.
 
 
 class Loader(object):
-    """This is a base class for corpus loaders to inherit from."""
-    # TODO: do we also need a class to group together the cache-related methods?
+    """This is a base class for corpus loaders to inherit from.
+
+    .. note:: TODO
+
+       * For speed/memory reasons , should this class have a method that
+         converts directly to a `CorpusDb` object, without passing through a
+         `Corpus` first?
+       * Is there a way to use the superclass to implement the caching?  Perhaps
+         it's too much hassle.
+
+    """
     @abc.abstractmethod
     def file(self, filename):
         """Return the content of one of the files from a corpus.
 
-        This method must use caching if it makes network requests or uses other
-        expensive resources (beyond disk access).
+        This method must use caching if it makes network requests or uses
+        other expensive resources (beyond disk access).  Subclasses should
+        call the method defined on this class (via ``super()``) in order to
+        partake of common error checking code.
 
-        Args
-        ----
-        filename : str
-            The name of the file requested
+        Args:
+            filename (str): The name of the file requested.
 
-        Returns
-        -------
-        str
-            The file's content"""
-        pass
+        Returns:
+            str: The file's content.
+
+        """
+        if filename not in self.files():
+            raise Exception("Invalid filename")
 
     @abc.abstractmethod
     def files(self):
@@ -55,25 +71,25 @@ class Loader(object):
         This method must use caching if it makes network requests or uses other
         expensive resources (beyond disk access).
 
-        Returns
-        -------
-        list of str
-            List of filenames"""
+        Returns:
+            list of str: List of filenames.
+        """
         pass
 
     def corpus(self, files=None):
-        """Load files into a ``Corpus``.
+        """Load files into a `Corpus`.
 
-        Args
-        ----
-        files : str or list of str
-            The files to include in the corpus.  Default is to include all
-            available files.
+        .. note:: TODO
 
-        Returns
-        -------
-        Corpus
-            The corpus composed of all trees in all files.
+           Handle file-level metadata in this method (need a specification of
+           how this appears in the files as well).
+
+        Args:
+            files (str or list of str): The files to include in the corpus.
+                Default is to include all available files.
+        Returns:
+            Corpus: The corpus composed of all trees in all files.
+
         """
         c = corpus.Corpus([])
         if isinstance(files, str):
@@ -84,12 +100,8 @@ class Loader(object):
                 tree_obj = tree.parse(tree_string)
                 if tree_obj is not None:
                     tree_obj.metadata.file = file
-                    # TODO: file-level metadata
                     c.append(tree_obj)
         return c
-
-    # TODO: a method for converting directly to an indexed corpus, for
-    # speed/mem optimization?
 
 
 # TODO: add a method to allow authentication, for private repos
@@ -101,23 +113,21 @@ class GithubLoader(Loader):
     def __init__(self, user, repo, ref="master", directory="", extension=".psd"):
         """Initialize a GithubLoader.
 
-        Args
-        ----
-        user : str
-            Github username of the repository to load from
-        repo : str
-            Name of the repository to load from
-        tag : str
-            A git ref of the revision to fetch.  Defaults to "master", the
-            latest revision.  If the repository uses git tags, you can request
-            a specific version of the corpus.  You can also use a sha1 hash to
-            request a specific revision.
-        directory : str
-            Path to the directory containing parsed files.  (TODO: support
-            corpora with parsed files in more than one directory.)
-        extension : str
-            File extension of corpus files.  Defaults to ".psd".  (TODO:
-            support multiple extensions.)
+        .. note:: TODO
+
+           * support corpora with parsed files in more than one directory
+           * support corpora with more than one kind of file extension
+
+        Args:
+            user (str): Github username of the repository to load from
+            repo (str): Name of the repository to load from.
+            tag (str): A git ref of the revision to fetch.
+                Defaults to "master", the latest revision.  If the repository
+                uses git tags, you can request a specific version of the
+                corpus.  You can also use a sha1 hash to request a specific
+                revision.
+            directory (str): Path to the directory containing parsed files.
+            extension (str): File extension of corpus files. Defaults to ".psd".
 
         """
         self._user = user
@@ -129,9 +139,7 @@ class GithubLoader(Loader):
         self._file_content = {}
 
     def file(self, filename):
-        if filename not in self.files():
-            # TODO: do this check for all loaders
-            raise Exception("Invalid filename")
+        super().file(filename)
         if filename in self._file_content:
             return self._file_content[filename]
         print("https://raw.githubusercontent.com/%s/%s/%s/%s%s" %
@@ -175,7 +183,16 @@ ICEPAHC = GithubLoader(user="antonkarl",
 
 
 class FileLoader(Loader):
-    """A loader for corpus files from the local filesystem."""
+    """A loader for corpus files from the local filesystem.
+
+    Args:
+        path (str): path to the directory where the corpus files can be found.
+        extension (str): the file extension used by the corpus.  Defaults
+            to ``.psd``, which is the Penn Historical Corpora standrad.
+        recursive (bool): whether to search for files in ``path`` recursively,
+            or only consider files immediately contained therein.
+
+    """
     def __init__(self, path, extension=".psd", recursive=False):
         self._path = os.path.abspath(os.path.expanduser(path))
         self._extension = extension

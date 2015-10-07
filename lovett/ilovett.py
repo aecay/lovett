@@ -1,3 +1,5 @@
+"""Functions for use in the IPython notebook interface."""
+
 from IPython.display import display, HTML
 import pkg_resources
 
