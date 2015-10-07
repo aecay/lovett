@@ -8,11 +8,13 @@ convert this data into more useful metadata entries.
 The following corpora are supported by the following functions:
 
 * IcePaHC
+
   * `icepahc_case`
   * `icepahc_lemma`
   * `icepahc_year`
 
 * General utility
+
   * `ensure_id`
 
 .. note:: TODO
