@@ -165,12 +165,14 @@ class Not(QueryFunction):
 
     def match_tree(self, tree):
         if self.fn.match_tree(tree):
-            return None
+            return False
         else:
-            return tree
+            return True
 
     def sql(self, corpus):
-        raise NotImplementedError("TODO")
+        return select([corpus.nodes.c.rowid]).where(
+            corpus.nodes.c.rowid != self.fn.sql(corpus)
+        )
 
     def __str__(self):
         return "~" + str(self.fn)
