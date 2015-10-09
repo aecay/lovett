@@ -34,6 +34,8 @@ import re
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import union, intersect
 
+import lovett.util as util
+
 # TODO: label("FOO") ^ label("BAR") -> foo idoms bar
 # label("FOO") ^ (label("BAR") > label("BAZ")) -> foo idoms bar, foo idoms
 # baz, bar (s)precedes baz
@@ -216,6 +218,8 @@ class idoms(WrapperQueryFunction):
         self.name = "idoms"
 
     def match_tree(self, tree):
+        if util.is_leaf(tree):
+            return False
         for daughter in tree:
             if self.query.match_tree(daughter):
                 return True
@@ -233,7 +237,7 @@ class idoms(WrapperQueryFunction):
 # - daughters(x, y, z) -> daughter(x) & daughter(y) & ...
 # - daughters_ordered(x, y, z) -> daughter(x & sprec(y & sprec(z)))
 
-class doms(QueryFunction):
+class doms(WrapperQueryFunction):
     """This class implements dominance queries at arbitrary depth.
 
     Its usage is very similar to that of the `idoms` class, which see.
@@ -249,6 +253,8 @@ class doms(QueryFunction):
         if _nested:
             if self.query.match_tree(tree):
                 return True
+        if util.is_leaf(tree):
+            return False
         for daughter in tree:
             if self.match_tree(daughter, True):
                 return True
