@@ -49,12 +49,24 @@ conventionally (and idiosyncratically) in these corpora; these functions
 convert this data into more useful metadata entries.</p>
 <p>The following corpora are supported by the following functions:</p>
 <ul class="simple">
-<li>IcePaHC
-* <a class="reference internal" href="#lovett.transform.icepahc_case" title="lovett.transform.icepahc_case"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_case</span></code></a>
-* <a class="reference internal" href="#lovett.transform.icepahc_lemma" title="lovett.transform.icepahc_lemma"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_lemma</span></code></a>
-* <a class="reference internal" href="#lovett.transform.icepahc_year" title="lovett.transform.icepahc_year"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_year</span></code></a></li>
-<li>General utility
-* <a class="reference internal" href="#lovett.transform.ensure_id" title="lovett.transform.ensure_id"><code class="xref any py py-func docutils literal"><span class="pre">ensure_id</span></code></a></li>
+<li>IcePaHC<ul>
+<li><a class="reference internal" href="#lovett.transform.icepahc_case" title="lovett.transform.icepahc_case"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_case</span></code></a></li>
+<li><a class="reference internal" href="#lovett.transform.icepahc_lemma" title="lovett.transform.icepahc_lemma"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_lemma</span></code></a></li>
+<li><a class="reference internal" href="#lovett.transform.icepahc_year" title="lovett.transform.icepahc_year"><code class="xref any py py-func docutils literal"><span class="pre">icepahc_year</span></code></a></li>
+</ul>
+</li>
+<li>The PPCHE (in general)<ul>
+<li><a class="reference internal" href="#lovett.transform.ppche_make_unicode" title="lovett.transform.ppche_make_unicode"><code class="xref any py py-func docutils literal"><span class="pre">ppche_make_unicode</span></code></a></li>
+</ul>
+</li>
+<li>The YCOE<ul>
+<li><a class="reference internal" href="#lovett.transform.ycoe_case" title="lovett.transform.ycoe_case"><code class="xref any py py-func docutils literal"><span class="pre">ycoe_case</span></code></a></li>
+</ul>
+</li>
+<li>General utility<ul>
+<li><a class="reference internal" href="#lovett.transform.ensure_id" title="lovett.transform.ensure_id"><code class="xref any py py-func docutils literal"><span class="pre">ensure_id</span></code></a></li>
+</ul>
+</li>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -62,20 +74,19 @@ convert this data into more useful metadata entries.</p>
 <p>To support:</p>
 <ul class="last simple">
 <li>IcePaHC: icepahc_word_splits</li>
-<li>PPCHE (generally): ppche_make_unicode, ppche_word_splits</li>
-<li>YCOE: ycoe_case</li>
+<li>PPCHE (generally): ppche_word_splits</li>
 <li>PCEEC: pceec_metadata</li>
 </ul>
 </div>
 <dl class="data">
 <dt id="lovett.transform.ICEPAHC_CASE_LABELS">
-<code class="descname">ICEPAHC_CASE_LABELS</code><em class="property"> = {'NPR', 'NPRS', 'Q', 'D', 'NS', 'N'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASE_LABELS" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ICEPAHC_CASE_LABELS</code><em class="property"> = {'NPR', 'NS', 'N', 'Q', 'NPRS', 'D'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASE_LABELS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Category labels which can bear case in IcePaHC.</p>
 </dd></dl>
 
 <dl class="data">
 <dt id="lovett.transform.ICEPAHC_CASES">
-<code class="descname">ICEPAHC_CASES</code><em class="property"> = {'D': 'dative', 'A': 'accusative', 'N': 'nominative', 'G': 'genitive'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASES" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ICEPAHC_CASES</code><em class="property"> = {'N': 'nominative', 'A': 'accusative', 'G': 'genitive', 'D': 'dative'}</em><a class="headerlink" href="#lovett.transform.ICEPAHC_CASES" title="Permalink to this definition">¶</a></dt>
 <dd><p>Mapping between dash tags and case metadata values in IcePaHC.</p>
 </dd></dl>
 
@@ -87,12 +98,17 @@ convert this data into more useful metadata entries.</p>
 <dl class="function">
 <dt id="lovett.transform.icepahc_case">
 <code class="descname">icepahc_case</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#icepahc_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform.icepahc_case" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert IcePaHC case to metadata.</p>
+<p>In IcePaHC, case is indicated as one of four dash tags attached to
+case-bearing lexical categories.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="lovett.transform.icepahc_lemma">
 <code class="descname">icepahc_lemma</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#icepahc_lemma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform.icepahc_lemma" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert IcePaHC lemmata to matadata.</p>
+<p>In IcePaHC, lemmata are stored in the leaf text as <code class="docutils literal"><span class="pre">text-lemma</span></code>.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="lovett.transform.icepahc_year">
@@ -100,6 +116,57 @@ convert this data into more useful metadata entries.</p>
 <dd><p>Add year metadata to a tree from IcePaHC.</p>
 <p>This function assumes that the tree&#8217;s file is already present in its
 metadata, and that the file name begins with a four-digit year.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.transform.PPCHE_UNICODE_TRANSFORMS">
+<code class="descname">PPCHE_UNICODE_TRANSFORMS</code><em class="property"> = [('+a', 'æ'), ('+A', 'Æ'), ('+t', 'þ'), ('+T', 'Þ'), ('+d', 'ð'), ('+D', 'Ð'), ('+g', 'ʒ'), ('+G', 'Ʒ'), ('+L', '£'), ('+e', 'ę'), ('+tt', 'ꝥ'), ('+TT', 'Ꝥ'), ('+Tt', 'Ꝥ')]</em><a class="headerlink" href="#lovett.transform.PPCHE_UNICODE_TRANSFORMS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping between PPCHE codes and their unicode translation.  See section
+B.2.2 at <a class="reference external" href="http://clu.uni.no/icame/manuals/HC/INDEX.HTM#con31">http://clu.uni.no/icame/manuals/HC/INDEX.HTM#con31</a></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.transform.PPCHE_UNICODE_SUPERSCRIPT">
+<code class="descname">PPCHE_UNICODE_SUPERSCRIPT</code><em class="property"> = {'s': 'ˢ', 'b': 'ᵇ', 'm': 'ᵐ', 'o': 'ᵒ', 'x': 'ˣ', 'j': 'ʲ', 'v': 'ᵛ', 'w': 'ʷ', 'a': 'ᵃ', 'f': 'ᶠ', 'c': 'ᶜ', 'z': 'ᶻ', 't': 'ᵗ', 'h': 'ʰ', 'u': 'ᵘ', 'e': 'ᵉ', 'y': 'ʸ', 'p': 'ᵖ', 'i': 'ⁱ', 'k': 'ᵏ', 'l': 'ˡ', 'g': 'ᵍ', 'd': 'ᵈ', 'n': 'ⁿ', 'r': 'ʳ'}</em><a class="headerlink" href="#lovett.transform.PPCHE_UNICODE_SUPERSCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping between letters and their Unicode superscripts</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lovett.transform._ppche_make_unicode_superscript">
+<code class="descname">_ppche_make_unicode_superscript</code><span class="sig-paren">(</span><em>matchobj</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#_ppche_make_unicode_superscript"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform._ppche_make_unicode_superscript" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lovett.transform._ppche_make_unicode_leaf">
+<code class="descname">_ppche_make_unicode_leaf</code><span class="sig-paren">(</span><em>leaf</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#_ppche_make_unicode_leaf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform._ppche_make_unicode_leaf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lovett.transform.ppche_make_unicode">
+<code class="descname">ppche_make_unicode</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#ppche_make_unicode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform.ppche_make_unicode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert characters in PPCHE format to unicode.</p>
+<p>Currently handles the <code class="docutils literal"><span class="pre">+X</span></code> notation for aesc, thorn, etc., as well as
+partial support for superscripts delimited by <code class="docutils literal"><span class="pre">=...=</span></code>.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.transform.YCOE_CASES">
+<code class="descname">YCOE_CASES</code><em class="property"> = {'N': 'nominative', 'I': 'instrumental', 'A': 'accusative', 'G': 'genitive', 'D': 'dative'}</em><a class="headerlink" href="#lovett.transform.YCOE_CASES" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mapping between caret-tags and case names in the YCOE</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="lovett.transform.YCOE_ADVERB_TYPES">
+<code class="descname">YCOE_ADVERB_TYPES</code><em class="property"> = {'T': 'temporal', 'L': 'locative'}</em><a class="headerlink" href="#lovett.transform.YCOE_ADVERB_TYPES" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mapping between caret-tags and addverb types in the YCOE</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lovett.transform.ycoe_case">
+<code class="descname">ycoe_case</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/transform.html#ycoe_case"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.transform.ycoe_case" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert case in the YCOE into metadata.</p>
+<p>Also handles the adverb-type notations <code class="docutils literal"><span class="pre">^L</span></code> and <code class="docutils literal"><span class="pre">^T</span></code> (locative and
+temporal), which the YCOE codes with a notation like that for case.</p>
 </dd></dl>
 
 <dl class="function">

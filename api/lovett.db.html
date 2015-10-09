@@ -50,12 +50,13 @@ however:</p>
 <ul class="simple">
 <li>The corpus is immutable.  It is only possible to append new trees to the end
 of the corpus (and in normal use even this should not be done).</li>
-<li>The <a class="reference internal" href="lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees" title="lovett.corpus.CorpusBase.matching_trees"><code class="xref any py py-meth docutils literal"><span class="pre">matching_trees</span></code></a> methods for searching by evaluating a <a class="reference internal" href="lovett.query.html#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><code class="xref any py py-class docutils literal"><span class="pre">QueryFunction</span></code></a>
-against the corpus is significantly optimized by the database engine.</li>
+<li>The <a class="reference internal" href="lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees" title="lovett.corpus.CorpusBase.matching_trees"><code class="xref any py py-meth docutils literal"><span class="pre">CorpusBase.matching_trees</span></code></a> methods for searching by evaluating a
+<a class="reference internal" href="lovett.query.html#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><code class="xref any py py-class docutils literal"><span class="pre">QueryFunction</span></code></a> against the corpus is significantly optimized by the
+database engine.</li>
 </ul>
 <dl class="class">
 <dt id="lovett.db.CorpusDb">
-<em class="property">class </em><code class="descname">CorpusDb</code><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">CorpusDb</code><span class="sig-paren">(</span><em>other=None</em>, <em>roots=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class implementing an indexed corpus.</p>
 <p>In order to operate, this class uses the <a class="reference external" href="https://www.sqlite.org/">SQLite</a> database engine, wrapped by the <a class="reference external" href="http://www.sqlalchemy.org/">sqlalchemy
 Python library</a> (except for a few raw SQL
@@ -64,6 +65,11 @@ Using SQLite brings the benefit of a mature and heavily optimized indexing
 engine.  SQLAlchemy provides a flexible programmatic interface for
 building SQL queries, eliminating the need to munge strings manually.</p>
 <p>The indexing strategy is described in the documentation at <code class="xref any docutils literal"><span class="pre">indexing</span></code>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">the roots attribute needs more work</p>
+</div>
 <dl class="attribute">
 <dt id="lovett.db.CorpusDb.engine">
 <code class="descname">engine</code><a class="headerlink" href="#lovett.db.CorpusDb.engine" title="Permalink to this definition">¶</a></dt>
@@ -105,9 +111,8 @@ Columns: <code class="docutils literal"><span class="pre">left</span></code>, <c
 <dl class="attribute">
 <dt id="lovett.db.CorpusDb.roots">
 <code class="descname">roots</code><a class="headerlink" href="#lovett.db.CorpusDb.roots" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference external" href="http://docs.sqlalchemy.org/en/rel_1_0/core/metadata.html#sqlalchemy.schema.Table" title="(in SQLAlchemy v1.0)"><code class="xref any docutils literal"><span class="pre">sqlalchemy.schema.Table</span></code></a></p>
-<p>the root nodes in the corpus.
-Columns: <code class="docutils literal"><span class="pre">id</span></code>.</p>
+<dd><p><em>list</em></p>
+<p>the root nodes in the corpus.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -120,7 +125,7 @@ Columns: <code class="docutils literal"><span class="pre">id</span></code>, <cod
 
 <dl class="method">
 <dt id="lovett.db.CorpusDb.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>other=None</em>, <em>roots=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb.__init__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -219,6 +224,11 @@ raise an exception on attempted modifications.</p>
 <dl class="method">
 <dt id="lovett.db.CorpusDb.__len__">
 <code class="descname">__len__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb.__len__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb.__len__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.db.CorpusDb.matching_trees">
+<code class="descname">matching_trees</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/db.html#CorpusDb.matching_trees"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.db.CorpusDb.matching_trees" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">

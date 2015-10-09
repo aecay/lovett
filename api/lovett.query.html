@@ -45,8 +45,8 @@
 <p>This module contains the Lovett query language.</p>
 <p>Query functions are defined as classes which inherit from <a class="reference internal" href="#lovett.query.QueryFunction" title="lovett.query.QueryFunction"><code class="xref any py py-class docutils literal"><span class="pre">QueryFunction</span></code></a>.
 Each query function must operate in two modes.  These functions are not
-accessed directly, but rather through the <a class="reference internal" href="lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees" title="lovett.corpus.CorpusBase.matching_trees"><code class="xref any py py-meth docutils literal"><span class="pre">matching_trees</span></code></a>
-method of <a class="reference internal" href="lovett.corpus.html#lovett.corpus.Corpus" title="lovett.corpus.Corpus"><code class="xref any py py-class docutils literal"><span class="pre">Corpus</span></code></a> objects (which dispatches to the appropriate mode).</p>
+accessed directly, but rather through the <a class="reference internal" href="lovett.corpus.html#lovett.corpus.CorpusBase.matching_trees" title="lovett.corpus.CorpusBase.matching_trees"><code class="xref any py py-meth docutils literal"><span class="pre">CorpusBase.matching_trees</span></code></a>
+method (which dispatches to the appropriate mode).</p>
 <p>The first mode is <em>direct mode</em>, which is accessed through the
 <a class="reference internal" href="#lovett.query.QueryFunction.match_tree" title="lovett.query.QueryFunction.match_tree"><code class="xref any py py-meth docutils literal"><span class="pre">QueryFunction.match_tree</span></code></a> function.  This function receives as an argument a
 <a class="reference internal" href="lovett.tree.html#lovett.tree.Tree" title="lovett.tree.Tree"><code class="xref any py py-class docutils literal"><span class="pre">Tree</span></code></a> object, and should return <code class="docutils literal"><span class="pre">True</span></code> if the tree matches the query.</p>
@@ -510,8 +510,91 @@ i.e. the use of <code class="docutils literal"><span class="pre">dash_tag(&quot;
 
 <dl class="class">
 <dt id="lovett.query.sprec">
-<em class="property">class </em><code class="descname">sprec</code><a class="reference internal" href="../_modules/lovett/query.html#sprec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descname">sprec</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#sprec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements sisterwise precedence queries.</p>
+<p>X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and
+X precedes Y.</p>
+<dl class="method">
+<dt id="lovett.query.sprec.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#sprec.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec.__init__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.sprec.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#sprec.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.sprec.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#sprec.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.sprec.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.isprec">
+<em class="property">class </em><code class="descname">isprec</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#isprec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.isprec" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements immediate sisterwise precedence queries.</p>
+<p>X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and
+X immediately precedes Y.</p>
+<dl class="method">
+<dt id="lovett.query.isprec.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>query</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#isprec.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.isprec.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.isprec.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#isprec.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.isprec.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.isprec.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#isprec.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.isprec.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.text">
+<em class="property">class </em><code class="descname">text</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements matching text of leaf nodes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">matching regexp, set</p>
+</div>
+<dl class="method">
+<dt id="lovett.query.text.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#text.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.text.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.text.__str__">
+<code class="descname">__str__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#text.__str__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.text.__str__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.text.match_tree">
+<code class="descname">match_tree</code><span class="sig-paren">(</span><em>tree</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#text.match_tree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.text.match_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lovett.query.text.sql">
+<code class="descname">sql</code><span class="sig-paren">(</span><em>corpus</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/lovett/query.html#text.sql"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.text.sql" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lovett.query.has_metadata">
+<em class="property">class </em><code class="descname">has_metadata</code><a class="reference internal" href="../_modules/lovett/query.html#has_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lovett.query.has_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Metadata queries.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>TODO</p>
+<p class="last">blocked on properly handling metadata in <a class="reference internal" href="lovett.db.html#lovett.db.CorpusDb._insert_node" title="lovett.db.CorpusDb._insert_node"><code class="xref any py py-meth docutils literal"><span class="pre">CorpusDb._insert_node</span></code></a>.</p>
+</div>
+</dd></dl>
 
 </div>
 

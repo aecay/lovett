@@ -49,11 +49,21 @@
 <span class="sd">The following corpora are supported by the following functions:</span>
 
 <span class="sd">* IcePaHC</span>
+
 <span class="sd">  * `icepahc_case`</span>
 <span class="sd">  * `icepahc_lemma`</span>
 <span class="sd">  * `icepahc_year`</span>
 
+<span class="sd">* The PPCHE (in general)</span>
+
+<span class="sd">  * `ppche_make_unicode`</span>
+
+<span class="sd">* The YCOE</span>
+
+<span class="sd">  * `ycoe_case`</span>
+
 <span class="sd">* General utility</span>
+
 <span class="sd">  * `ensure_id`</span>
 
 <span class="sd">.. note:: TODO</span>
@@ -61,13 +71,13 @@
 <span class="sd">   To support:</span>
 
 <span class="sd">   * IcePaHC: icepahc_word_splits</span>
-<span class="sd">   * PPCHE (generally): ppche_make_unicode, ppche_word_splits</span>
-<span class="sd">   * YCOE: ycoe_case</span>
+<span class="sd">   * PPCHE (generally): ppche_word_splits</span>
 <span class="sd">   * PCEEC: pceec_metadata</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">md5</span>
+<span class="kn">import</span> <span class="nn">re</span>
 
 <span class="kn">import</span> <span class="nn">lovett.util</span> <span class="kn">as</span> <span class="nn">util</span>
 
@@ -95,6 +105,12 @@
 
 </div>
 <div class="viewcode-block" id="icepahc_case"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform.icepahc_case">[docs]</a><span class="k">def</span> <span class="nf">icepahc_case</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert IcePaHC case to metadata.</span>
+
+<span class="sd">    In IcePaHC, case is indicated as one of four dash tags attached to</span>
+<span class="sd">    case-bearing lexical categories.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_icepahc_case_do</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_nonterminal</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
@@ -102,6 +118,11 @@
 
 </div>
 <div class="viewcode-block" id="icepahc_lemma"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform.icepahc_lemma">[docs]</a><span class="k">def</span> <span class="nf">icepahc_lemma</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert IcePaHC lemmata to matadata.</span>
+
+<span class="sd">    In IcePaHC, lemmata are stored in the leaf text as ``text-lemma``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_nonterminal</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">subtree</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
             <span class="n">icepahc_lemma</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span>
@@ -120,6 +141,119 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">year</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+
+<span class="c">#: Mapping between PPCHE codes and their unicode translation.  See section</span>
+<span class="c">#: B.2.2 at http://clu.uni.no/icame/manuals/HC/INDEX.HTM#con31</span></div>
+<span class="n">PPCHE_UNICODE_TRANSFORMS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s">&quot;+a&quot;</span><span class="p">,</span> <span class="s">&quot;æ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+A&quot;</span><span class="p">,</span> <span class="s">&quot;Æ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+t&quot;</span><span class="p">,</span> <span class="s">&quot;þ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+T&quot;</span><span class="p">,</span> <span class="s">&quot;Þ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+d&quot;</span><span class="p">,</span> <span class="s">&quot;ð&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+D&quot;</span><span class="p">,</span> <span class="s">&quot;Ð&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+g&quot;</span><span class="p">,</span> <span class="s">&quot;ʒ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+G&quot;</span><span class="p">,</span> <span class="s">&quot;Ʒ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+L&quot;</span><span class="p">,</span> <span class="s">&quot;£&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+e&quot;</span><span class="p">,</span> <span class="s">&quot;ę&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+tt&quot;</span><span class="p">,</span> <span class="s">&quot;ꝥ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+TT&quot;</span><span class="p">,</span> <span class="s">&quot;Ꝥ&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;+Tt&quot;</span><span class="p">,</span> <span class="s">&quot;Ꝥ&quot;</span><span class="p">)</span>
+<span class="p">]</span>
+
+<span class="c">#: Mapping between letters and their Unicode superscripts</span>
+<span class="n">PPCHE_UNICODE_SUPERSCRIPT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;a&quot;</span><span class="p">:</span> <span class="s">&quot;ᵃ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;b&quot;</span><span class="p">:</span> <span class="s">&quot;ᵇ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;c&quot;</span><span class="p">:</span> <span class="s">&quot;ᶜ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;d&quot;</span><span class="p">:</span> <span class="s">&quot;ᵈ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;e&quot;</span><span class="p">:</span> <span class="s">&quot;ᵉ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;f&quot;</span><span class="p">:</span> <span class="s">&quot;ᶠ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;g&quot;</span><span class="p">:</span> <span class="s">&quot;ᵍ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;h&quot;</span><span class="p">:</span> <span class="s">&quot;ʰ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;i&quot;</span><span class="p">:</span> <span class="s">&quot;ⁱ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;j&quot;</span><span class="p">:</span> <span class="s">&quot;ʲ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;k&quot;</span><span class="p">:</span> <span class="s">&quot;ᵏ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;l&quot;</span><span class="p">:</span> <span class="s">&quot;ˡ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;m&quot;</span><span class="p">:</span> <span class="s">&quot;ᵐ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;n&quot;</span><span class="p">:</span> <span class="s">&quot;ⁿ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;o&quot;</span><span class="p">:</span> <span class="s">&quot;ᵒ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;p&quot;</span><span class="p">:</span> <span class="s">&quot;ᵖ&quot;</span><span class="p">,</span>
+    <span class="c"># No superscript q!</span>
+    <span class="s">&quot;r&quot;</span><span class="p">:</span> <span class="s">&quot;ʳ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;s&quot;</span><span class="p">:</span> <span class="s">&quot;ˢ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;t&quot;</span><span class="p">:</span> <span class="s">&quot;ᵗ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;u&quot;</span><span class="p">:</span> <span class="s">&quot;ᵘ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;v&quot;</span><span class="p">:</span> <span class="s">&quot;ᵛ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;w&quot;</span><span class="p">:</span> <span class="s">&quot;ʷ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;x&quot;</span><span class="p">:</span> <span class="s">&quot;ˣ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;y&quot;</span><span class="p">:</span> <span class="s">&quot;ʸ&quot;</span><span class="p">,</span>
+    <span class="s">&quot;z&quot;</span><span class="p">:</span> <span class="s">&quot;ᶻ&quot;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="_ppche_make_unicode_superscript"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform._ppche_make_unicode_superscript">[docs]</a><span class="k">def</span> <span class="nf">_ppche_make_unicode_superscript</span><span class="p">(</span><span class="n">matchobj</span><span class="p">):</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">matchobj</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">PPCHE_UNICODE_SUPERSCRIPT</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">)))</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Could not convert to superscript: &quot;</span> <span class="o">+</span> <span class="n">g</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="_ppche_make_unicode_leaf"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform._ppche_make_unicode_leaf">[docs]</a><span class="k">def</span> <span class="nf">_ppche_make_unicode_leaf</span><span class="p">(</span><span class="n">leaf</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">PPCHE_UNICODE_TRANSFORMS</span><span class="p">:</span>
+        <span class="n">leaf</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">leaf</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">leaf</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&quot;=(.*?)=&quot;</span><span class="p">,</span> <span class="n">_ppche_make_unicode_superscript</span><span class="p">,</span> <span class="n">leaf</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ppche_make_unicode"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform.ppche_make_unicode">[docs]</a><span class="k">def</span> <span class="nf">ppche_make_unicode</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert characters in PPCHE format to unicode.</span>
+
+<span class="sd">    Currently handles the ``+X`` notation for aesc, thorn, etc., as well as</span>
+<span class="sd">    partial support for superscripts delimited by ``=...=``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="n">_ppche_make_unicode_leaf</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ppche_make_unicode</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+
+<span class="c">#: A mapping between caret-tags and case names in the YCOE</span></div>
+<span class="n">YCOE_CASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;A&quot;</span><span class="p">:</span> <span class="s">&quot;accusative&quot;</span><span class="p">,</span>
+    <span class="s">&quot;N&quot;</span><span class="p">:</span> <span class="s">&quot;nominative&quot;</span><span class="p">,</span>
+    <span class="s">&quot;D&quot;</span><span class="p">:</span> <span class="s">&quot;dative&quot;</span><span class="p">,</span>
+    <span class="s">&quot;G&quot;</span><span class="p">:</span> <span class="s">&quot;genitive&quot;</span><span class="p">,</span>
+    <span class="s">&quot;I&quot;</span><span class="p">:</span> <span class="s">&quot;instrumental&quot;</span>
+<span class="p">}</span>
+
+<span class="c">#: A mapping between caret-tags and addverb types in the YCOE</span>
+<span class="n">YCOE_ADVERB_TYPES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&quot;T&quot;</span><span class="p">:</span> <span class="s">&quot;temporal&quot;</span><span class="p">,</span>
+    <span class="s">&quot;L&quot;</span><span class="p">:</span> <span class="s">&quot;locative&quot;</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="ycoe_case"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform.ycoe_case">[docs]</a><span class="k">def</span> <span class="nf">ycoe_case</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert case in the YCOE into metadata.</span>
+
+<span class="sd">    Also handles the adverb-type notations ``^L`` and ``^T`` (locative and</span>
+<span class="sd">    temporal), which the YCOE codes with a notation like that for case.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;^&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Label with more than 1 &#39;^&#39;: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tree</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="n">tree</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;ADV&quot;</span><span class="p">:</span>
+            <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">adverb_type</span> <span class="o">=</span> <span class="n">YCOE_ADVERB_TYPES</span><span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tree</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">case</span> <span class="o">=</span> <span class="n">YCOE_CASES</span><span class="p">[</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">util</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
+            <span class="n">ycoe_case</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="ensure_id"><a class="viewcode-back" href="../../api/lovett.transform.html#lovett.transform.ensure_id">[docs]</a><span class="k">def</span> <span class="nf">ensure_id</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>

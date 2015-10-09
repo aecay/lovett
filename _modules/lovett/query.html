@@ -43,8 +43,8 @@
 
 <span class="sd">Query functions are defined as classes which inherit from `QueryFunction`.</span>
 <span class="sd">Each query function must operate in two modes.  These functions are not</span>
-<span class="sd">accessed directly, but rather through the `matching_trees`</span>
-<span class="sd">method of `Corpus` objects (which dispatches to the appropriate mode).</span>
+<span class="sd">accessed directly, but rather through the `CorpusBase.matching_trees`</span>
+<span class="sd">method (which dispatches to the appropriate mode).</span>
 
 <span class="sd">The first mode is *direct mode*, which is accessed through the</span>
 <span class="sd">`QueryFunction.match_tree` function.  This function receives as an argument a</span>
@@ -74,6 +74,9 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">select</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.sql.expression</span> <span class="kn">import</span> <span class="n">union</span><span class="p">,</span> <span class="n">intersect</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">import</span> <span class="nn">lovett.util</span> <span class="kn">as</span> <span class="nn">util</span>
 
 <span class="c"># TODO: label(&quot;FOO&quot;) ^ label(&quot;BAR&quot;) -&gt; foo idoms bar</span>
 <span class="c"># label(&quot;FOO&quot;) ^ (label(&quot;BAR&quot;) &gt; label(&quot;BAZ&quot;)) -&gt; foo idoms bar, foo idoms</span>
@@ -206,12 +209,14 @@
 </div>
 <div class="viewcode-block" id="Not.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">None</span>
+            <span class="k">return</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">tree</span>
+            <span class="k">return</span> <span class="bp">True</span>
 </div>
 <div class="viewcode-block" id="Not.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;TODO&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">corpus</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">rowid</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+        <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Not.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.Not.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s">&quot;~&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fn</span><span class="p">)</span>
@@ -255,6 +260,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;idoms&quot;</span>
 </div>
 <div class="viewcode-block" id="idoms.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.idoms.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">daughter</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">daughter</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">True</span>
@@ -272,7 +279,7 @@
 <span class="c"># - daughters(x, y, z) -&gt; daughter(x) &amp; daughter(y) &amp; ...</span>
 <span class="c"># - daughters_ordered(x, y, z) -&gt; daughter(x &amp; sprec(y &amp; sprec(z)))</span>
 </div></div>
-<div class="viewcode-block" id="doms"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms">[docs]</a><span class="k">class</span> <span class="nc">doms</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+<div class="viewcode-block" id="doms"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.doms">[docs]</a><span class="k">class</span> <span class="nc">doms</span><span class="p">(</span><span class="n">WrapperQueryFunction</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;This class implements dominance queries at arbitrary depth.</span>
 
 <span class="sd">    Its usage is very similar to that of the `idoms` class, which see.</span>
@@ -288,6 +295,8 @@
         <span class="k">if</span> <span class="n">_nested</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">util</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">daughter</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">daughter</span><span class="p">,</span> <span class="bp">True</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">True</span>
@@ -449,9 +458,92 @@
         <span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="sprec"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec">[docs]</a><span class="k">class</span> <span class="nc">sprec</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
-    <span class="c"># TODO!</span>
+<div class="viewcode-block" id="sprec"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec">[docs]</a><span class="k">class</span> <span class="nc">sprec</span><span class="p">(</span><span class="n">WrapperQueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements sisterwise precedence queries.</span>
+
+<span class="sd">    X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and</span>
+<span class="sd">    X precedes Y.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="sprec.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;sprec&quot;</span>
+</div>
+<div class="viewcode-block" id="sprec.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">parent</span>
+        <span class="n">right_siblings</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">tree</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">right_siblings</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c"># tree itself is included in the list; drop it</span>
+        <span class="n">right_siblings</span> <span class="o">=</span> <span class="n">right_siblings</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">,</span> <span class="n">right_siblings</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="sprec.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.sprec.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">left</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">distance</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">))</span>
+        <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="isprec"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.isprec">[docs]</a><span class="k">class</span> <span class="nc">isprec</span><span class="p">(</span><span class="n">WrapperQueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements immediate sisterwise precedence queries.</span>
+
+<span class="sd">    X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and</span>
+<span class="sd">    X immediately precedes Y.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="isprec.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.isprec.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&quot;isprec&quot;</span>
+</div>
+<div class="viewcode-block" id="isprec.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.isprec.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">parent</span>
+        <span class="n">right_siblings</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">dropwhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">tree</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">right_siblings</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="c"># get the immediate right sibling</span>
+        <span class="n">right_sibling</span> <span class="o">=</span> <span class="n">right_siblings</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">match_tree</span><span class="p">(</span><span class="n">right_sibling</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="isprec.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.isprec.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">left</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">distance</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">sprec</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="n">corpus</span><span class="p">))</span>
+        <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="text"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.text">[docs]</a><span class="k">class</span> <span class="nc">text</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements matching text of leaf nodes.</span>
+
+<span class="sd">    .. note:: TODO</span>
+
+<span class="sd">       matching regexp, set</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="text.__init__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.text.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+</div>
+<div class="viewcode-block" id="text.__str__"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.text.__str__">[docs]</a>    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;text(</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
+</div>
+<div class="viewcode-block" id="text.match_tree"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.text.match_tree">[docs]</a>    <span class="k">def</span> <span class="nf">match_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">util</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tree</span><span class="o">.</span><span class="n">text</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span>
+</div>
+<div class="viewcode-block" id="text.sql"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.text.sql">[docs]</a>    <span class="k">def</span> <span class="nf">sql</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">corpus</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">select</span><span class="p">([</span><span class="n">corpus</span><span class="o">.</span><span class="n">tree_metadata</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">id</span><span class="p">])</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">tree_metadata</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="s">&quot;text&quot;</span><span class="p">)</span> <span class="o">&amp;</span>
+            <span class="p">(</span><span class="n">corpus</span><span class="o">.</span><span class="n">tree_metadata</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+        <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="has_metadata"><a class="viewcode-back" href="../../api/lovett.query.html#lovett.query.has_metadata">[docs]</a><span class="k">class</span> <span class="nc">has_metadata</span><span class="p">(</span><span class="n">QueryFunction</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Metadata queries.</span>
+
+<span class="sd">    .. note:: TODO</span>
+
+<span class="sd">       blocked on properly handling metadata in `CorpusDb._insert_node`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
+
 
 <span class="c"># TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for</span>
 <span class="c"># daughters</span></div>
