@@ -34,6 +34,10 @@ class CorpusDb(corpus.CorpusBase):
 
     The indexing strategy is described in the documentation at `indexing`.
 
+    .. note:: TODO
+
+       the roots attribute needs more work
+
     Attributes:
         engine (`sqlalchemy.engine.Engine`): the database engine (*private*)
         metadata (`sqlalchemy.schema.MetaData`): metadata (*private*)
@@ -43,33 +47,50 @@ class CorpusDb(corpus.CorpusBase):
             ``parent``, ``child``, ``depth``
         sprec (`sqlalchemy.schema.Table`): reflexive sister-precedence.
             Columns: ``left``, ``right``, ``distance``.
-        roots (`sqlalchemy.schema.Table`): the root nodes in the corpus.
-            Columns: ``id``.
+        roots (list): the root nodes in the corpus.
         metadata (`sqlalchemy.schema.Table`): metadata for each node.
             Columns: ``id``, ``key``, ``value``.
 
     """
-    def __init__(self):
-        self.engine = sqlalchemy.create_engine("sqlite:///:memory:")
-        self.metadata = MetaData()
-        self.nodes = Table("nodes", self.metadata,
-                           Column("rowid", Integer, primary_key=True),
-                           Column("label", String))
-        self.dom = Table("dom", self.metadata,
-                         Column("parent", Integer, ForeignKey("nodes.rowid")),
-                         Column("child", Integer, ForeignKey("nodes.rowid")),
-                         Column("depth", Integer))
-        self.sprec = Table("sprec", self.metadata,
-                           Column("left", Integer, ForeignKey("nodes.rowid")),
-                           Column("right", Integer, ForeignKey("nodes.rowid")),
-                           Column("distance", Integer))
-        self.roots = Table("roots", self.metadata,
-                           Column("id", Integer, ForeignKey("nodes.rowid")))
-        self.tree_metadata = Table("metadata", self.metadata,
-                                   Column("id", Integer, ForeignKey("nodes.rowid")),
-                                   Column("key", String),
-                                   Column("value", String))
-        self.metadata.create_all(self.engine)
+    def __init__(self, other=None, roots=None):
+        if other is None:
+            # Initialize an empty corpus, creating the db from scratch
+            self.engine = sqlalchemy.create_engine("sqlite:///:memory:")
+            self.metadata = MetaData()
+            self.nodes = Table("nodes", self.metadata,
+                               Column("rowid", Integer, primary_key=True),
+                               Column("label", String))
+            self.dom = Table("dom", self.metadata,
+                             Column("parent", Integer, ForeignKey("nodes.rowid")),
+                             Column("child", Integer, ForeignKey("nodes.rowid")),
+                             Column("depth", Integer))
+            self.sprec = Table("sprec", self.metadata,
+                               Column("left", Integer, ForeignKey("nodes.rowid")),
+                               Column("right", Integer, ForeignKey("nodes.rowid")),
+                               Column("distance", Integer))
+            self.roots = []
+            self.tree_metadata = Table("metadata", self.metadata,
+                                       Column("id", Integer, ForeignKey("nodes.rowid")),
+                                       Column("key", String),
+                                       Column("value", String))
+            self.metadata.create_all(self.engine)
+        else:
+            # Create a corpus that is a clone of another corpus
+            self.engine = other.engine
+            self.metadata = other.metadata
+            self.nodes = other.nodes
+            self.dom = other.dom
+            self.sprec = other.sprec
+            self.tree_metadata = other.tree_metadata
+
+            if roots is None:
+                # Make a copy of the roots list, so the corpora can be treated
+                # differently.  TODO: requires filtering search results to be
+                # in the list of roots.  Would it be better to clone the DB
+                # backing this corpus, and then prune it according to roots??
+                self.roots = list(other.roots)
+            else:
+                self.roots = roots
 
     def _add_child(self, parent, child):
         """Add a parent-child relationship to the database.
@@ -139,6 +160,7 @@ class CorpusDb(corpus.CorpusBase):
             lastchild_rowid = None
             for child in node:
                 lastchild_rowid = self._insert_node(child, rowid, lastchild_rowid)
+        # TODO: add metadata from the tree object to the DB
         return rowid
 
     def insert_tree(self, t):
@@ -149,8 +171,7 @@ class CorpusDb(corpus.CorpusBase):
 
         """
         rowid = self._insert_node(t)
-        c = self.engine.connect()
-        c.execute(self.roots.insert(), id=rowid)
+        self.roots.append(rowid)
 
     def _reconstitute(self, rowid):
         """Create a `Tree` from the database.
@@ -196,15 +217,16 @@ class CorpusDb(corpus.CorpusBase):
 
     # Corpus abstract methods
     def __getitem__(self, i):
-        c = self.engine.connect()
-        return self._reconstitute(
-            c.execute(
-                sqlalchemy.sql.text("SELECT rowid FROM roots ORDER BY rowid")
-            ).fetchall()[i][0])
+        return self._reconstitute(self.roots[i])
 
     def __len__(self):
-        c = self.conn.cursor()
-        return len(c.execute(sqlalchemy.sql.text("SELECT * FROM roots")).fetchall())
+        return len(self.roots)
+
+    def matching_trees(self, query):
+        c = self.engine.connect()
+        s = query.sql(self)
+        r = list(map(lambda x: x[0], c.execute(s).fetchall()))
+        return CorpusDb(self, r)
 
     # Instance methods
     def to_corpus(self):
