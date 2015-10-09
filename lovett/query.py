@@ -33,6 +33,7 @@ import abc
 import re
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import union, intersect
+import itertools
 
 import lovett.util as util
 
@@ -416,9 +417,92 @@ class dash_tag(label):
         )
 
 
-class sprec(QueryFunction):
-    # TODO!
+class sprec(WrapperQueryFunction):
+    """This class implements sisterwise precedence queries.
+
+    X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and
+    X precedes Y.
+
+    """
+    def __init__(self, query):
+        super().__init__(query)
+        self.name = "sprec"
+
+    def match_tree(self, tree):
+        parent = tree.parent
+        right_siblings = itertools.dropwhile(lambda x: x != tree, parent)
+        if len(right_siblings) < 2:
+            return False
+        # tree itself is included in the list; drop it
+        right_siblings = right_siblings[1:]
+        return any(map(self.query.match_tree, right_siblings))
+
+    def sql(self, corpus):
+        return select([corpus.sprec.c.left]).where(
+            (corpus.sprec.c.distance > 0) &
+            (corpus.sprec.c.right == self.query.sql(corpus))
+        )
+
+
+class isprec(WrapperQueryFunction):
+    """This class implements immediate sisterwise precedence queries.
+
+    X sisterwise-precedes Y iff X and Y are sisters (have the same parent) and
+    X immediately precedes Y.
+
+    """
+    def __init__(self, query):
+        super().__init__(query)
+        self.name = "isprec"
+
+    def match_tree(self, tree):
+        parent = tree.parent
+        right_siblings = itertools.dropwhile(lambda x: x != tree, parent)
+        if len(right_siblings) < 2:
+            return False
+        # get the immediate right sibling
+        right_sibling = right_siblings[1]
+        return self.query.match_tree(right_sibling)
+
+    def sql(self, corpus):
+        return select([corpus.sprec.c.left]).where(
+            (corpus.sprec.c.distance == 1) &
+            (corpus.sprec.c.right == self.query.sql(corpus))
+        )
+
+
+class text(QueryFunction):
+    """This class implements matching text of leaf nodes.
+
+    .. note:: TODO
+
+       matching regexp, set
+    """
+    def __init__(self, text):
+        self.text = text
+
+    def __str__(self):
+        return "text(\"%s\")" % self.text
+
+    def match_tree(self, tree):
+        return util.is_leaf(tree) and tree.text == self.text
+
+    def sql(self, corpus):
+        return select([corpus.tree_metadata.c.id]).where(
+            (corpus.tree_metadata.c.key == "text") &
+            (corpus.tree_metadata.c.value == self.text)
+        )
+
+
+class has_metadata(QueryFunction):
+    """Metadata queries.
+
+    .. note:: TODO
+
+       blocked on properly handling metadata in `CorpusDb._insert_node`.
+    """
     pass
+
 
 # TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for
 # daughters
