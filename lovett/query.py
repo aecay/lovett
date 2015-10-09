@@ -2,8 +2,8 @@
 
 Query functions are defined as classes which inherit from `QueryFunction`.
 Each query function must operate in two modes.  These functions are not
-accessed directly, but rather through the `matching_trees`
-method of `Corpus` objects (which dispatches to the appropriate mode).
+accessed directly, but rather through the `CorpusBase.matching_trees`
+method (which dispatches to the appropriate mode).
 
 The first mode is *direct mode*, which is accessed through the
 `QueryFunction.match_tree` function.  This function receives as an argument a
