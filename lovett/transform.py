@@ -29,7 +29,6 @@ The following corpora are supported by the following functions:
 
    To support:
 
-   * IcePaHC: icepahc_word_splits
    * PPCHE (generally): ppche_word_splits
    * PCEEC: pceec_metadata
 
@@ -41,10 +40,25 @@ import re
 import lovett.util as util
 
 
-# TODO: make sure ICEPAHC_CASE_LABELS is complete
-
 #: Category labels which can bear case in IcePaHC.
-ICEPAHC_CASE_LABELS = set(("N", "NS", "NPR", "NPRS", "Q", "D"))
+ICEPAHC_CASE_LABELS = set(("ADJ", "ADJR", "ADJS",
+                           "ADV",  # Only one, tagged XXX
+                           "ADVR",  # Few
+                           "ALSO",
+                           "D",
+                           "DAN",
+                           "ES",  # Only one, tagged XXX
+                           "FP",
+                           "MAG",  # Only one token
+                           "MAN",
+                           "N", "NS", "NPR", "NPRS",
+                           "ONE", "ONES",
+                           "OTHER", "OTHERS",
+                           "PRO",
+                           "Q", "QR", "QS",
+                           "SUCH",
+                           "VAG", "VAN", "VBN",
+                           "WADJ", "WADV", "WD", "WPRO", "WQ"))
 
 #: Mapping between dash tags and case metadata values in IcePaHC.
 ICEPAHC_CASES = {"N": "nominative",
@@ -56,9 +70,11 @@ ICEPAHC_CASES = {"N": "nominative",
 def _icepahc_case_do(tree):
     label = tree.label
     parts = label.split("-")
-    # TODO: will we ever get something like N-G-1 with movt index???
-    if len(parts) > 1 and parts[0] in ICEPAHC_CASE_LABELS and \
-       parts[-1] in ICEPAHC_CASES:
+    # The base label is the label without any dash tags.  Additionally, if it
+    # is a compound tag with +, take the rightmost element.  And zap any
+    # numeric word split indicators.
+    base_label = re.sub("[1-3][1-3]$", "", parts[0].split("+")[-1])
+    if len(parts) > 1 and base_label in ICEPAHC_CASE_LABELS and parts[-1] in ICEPAHC_CASES:
         tree.label = "-".join(parts[:-1])
         tree.metadata["CASE"] = ICEPAHC_CASES[parts[-1]]
 
@@ -100,6 +116,31 @@ def icepahc_year(tree):
 
     """
     tree.metadata.year = int(tree.metadata.file[0:4])
+
+def icepahc_word_splits(tree):
+    """Convert IcePaHC word splits to proper metadata.
+
+    Words which begin with an ``@`` character have it stripped, and the
+    ``IS-CONTINUATION`` metadata set.  Words which end with a ``@`` have it
+    stripped, but no metadata is added (it would be redundant with
+    ``IS-CONTINUATION``).
+
+    .. note: TODO
+
+        Earlier I had considered a ``HAS-CONTINUATION`` metadata key.  Would
+        it be a good idea?
+
+    """
+    if util.is_leaf(tree):
+        if tree.text.startswith("@"):
+            tree.text = tree.text[1:]
+            tree.metadata.is_continuation = True
+        if tree.text.endswith("@"):
+            tree.text = tree.text[:-1]
+            # TODO: has_continuation?
+    else:
+        for child in tree:
+            icepahc_word_splits(child)
 
 #: Mapping between PPCHE codes and their unicode translation.  See section
 #: B.2.2 at http://clu.uni.no/icame/manuals/HC/INDEX.HTM#con31
@@ -198,7 +239,7 @@ def ycoe_case(tree):
     """Convert case in the YCOE into metadata.
 
     Also handles the adverb-type notations ``^L`` and ``^T`` (locative and
-    temporal), which the YCOE codes with a notation like that for case.
+    temporal), which the YCOE codes with a notation like the one for case.
 
     """
     l = tree.label.split("^")
@@ -218,5 +259,3 @@ def ycoe_case(tree):
 def ensure_id(tree):
     if tree.id is None:
         tree.root.metadata.id = md5.new().update(tree.root.urtext).hexdigest()
-
-# TODO: ycoe_case
