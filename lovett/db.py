@@ -125,6 +125,17 @@ class CorpusDb(corpus.CorpusBase):
             WHERE l.right = :left AND r.left = :right""")
         c.execute(update, left=left, right=right)
 
+    def _insert_metadata(self, node_id, dic, prefix=""):
+        c = self.engine.connect()
+        for key, val in dic.items():
+            if isinstance(val, str):
+                c.execute(self.tree_metadata.insert().values(
+                    id=node_id,
+                    key=prefix + key,
+                    value=val))
+            else:
+                self._insert_metadata(node_id, val, prefix + key + ":")
+
     def _insert_node(self, node, parent=None, left=None):
         """Insert a node into the database.
 
@@ -161,7 +172,7 @@ class CorpusDb(corpus.CorpusBase):
             lastchild_rowid = None
             for child in node:
                 lastchild_rowid = self._insert_node(child, rowid, lastchild_rowid)
-        # TODO: add metadata from the tree object to the DB
+        self._insert_metadata(rowid, node.metadata)
         return rowid
 
     def insert_tree(self, t):
@@ -174,6 +185,28 @@ class CorpusDb(corpus.CorpusBase):
         rowid = self._insert_node(t)
         self.roots.append(rowid)
 
+    def _reconstitute_metadata(self, rowid):
+        """TODO: document this function.
+
+        And how it is riddled with inelegant hacks."""
+        c = self.engine.connect()
+        metadata = c.execute(
+            select([self.tree_metadata.c.key, self.tree_metadata.c.value]).
+            where(self.tree_metadata.c.id == rowid)
+        ).fetchall()
+        m = tree.Metadata({})
+        for k, v in metadata:
+            if k == "text":
+                # A hack :(
+                continue
+            # TODO: This is a really inelegant way to do it...
+            _m = m
+            ks = k.split(":")
+            for _k in ks[:-1]:
+                _m = _m[_k]
+            _m[ks[-1]] = v
+        return m
+
     def _reconstitute(self, rowid):
         """Create a `Tree` from the database.
 
@@ -182,10 +215,7 @@ class CorpusDb(corpus.CorpusBase):
 
         .. note:: TODO
 
-           This function does not handle metadata yet (other than the "text"
-           metadata which is used to store the text of leaf nodes).
-
-           It also relies on the assumption that database ids are
+           This function relies on the assumption that database ids are
            monotonically increasing as trees are added to the database.  This
            is valid as long as `CorpusDb` is not mutable.  However, in the
            (unlikely) event that we decide to make indexed corpora, and the
@@ -208,13 +238,13 @@ class CorpusDb(corpus.CorpusBase):
         ).fetchall()
         if len(children) > 0:
             child_trees = [self._reconstitute(child[0]) for child in children]
-            return tree.NonTerminal(label, child_trees)
+            return tree.NonTerminal(label, child_trees, self._reconstitute_metadata(rowid))
         else:
             text = c.execute(
                 select([self.tree_metadata.c.value]).
                 where((self.tree_metadata.c.id == rowid) & (self.tree_metadata.c.key == "text"))
             ).fetchone()[0]
-            return tree.Leaf(label, text)
+            return tree.Leaf(label, text, self._reconstitute_metadata(rowid))
 
     # Corpus abstract methods
     def __getitem__(self, i):

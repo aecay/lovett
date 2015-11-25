@@ -8,6 +8,7 @@ import sqlalchemy
 import lovett.tree as T
 
 import lovett.db as db
+import lovett.transform as transform
 
 
 class CorpusTest(unittest.TestCase):
@@ -55,3 +56,11 @@ class CorpusTest(unittest.TestCase):
     def test_reconstitute(self):
         t = T.parse("(IP (NP (D a) (N dog)) (VBD chased) (NP (D the) (ADJ speedy) (N+N mailman)))")
         self.assertEqual(self.d[0], t)
+
+    def test_reconstitute_metadata(self):
+        d = db.CorpusDb()
+        t = T.parse("(IP (NP (D a-a) (N dog-dog)) (VBD chased-chase) (NP (D the-the) (ADJ speedy-speedy) (N+N mailman-mailman)))")
+        transform.icepahc_lemma(t)
+        d.insert_tree(t)
+        self.assertEqual(d[0], t)
+        self.assertEqual(d[0][0][0].metadata.lemma, "a")
