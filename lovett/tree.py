@@ -265,10 +265,10 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
     # For MutableSequence
     def __setitem__(self, index, value):
+        if not isinstance(value, Tree):
+            raise ValueError("Can't place a non-Tree into a Tree: %s" % value)
         value.parent = self
         self._children[index] = value
-        # TODO: what should be returned???
-        return self._children[index]
 
     def __delitem__(self, index):
         # TODO: is there a better way to do this?
@@ -278,10 +278,11 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
             # index is a slice
             for child in self._children[index]:  # pragma: no branch
                 child.parent = None
-        # TODO: should something be returned?
         del self._children[index]
 
     def insert(self, index, value):
+        if not isinstance(value, Tree):
+            raise ValueError("Can't place a non-Tree into a Tree: %s" % value)
         value.parent = self
         return self._children.insert(index, value)
 
