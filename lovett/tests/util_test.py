@@ -96,14 +96,6 @@ class UtilTest(unittest.TestCase):
         self.assertTrue(lovett.util.is_trace_string("*"))
         self.assertFalse(lovett.util.is_trace_string("*FOO*"))
 
-        # TODO: can traces ever be gapped?
-        raise SkipTest
-        self.assertTrue(lovett.util.is_trace_string("*T*=1"))
-        self.assertTrue(lovett.util.is_trace_string("*ICH*=1"))
-        self.assertTrue(lovett.util.is_trace_string("*CL*=1"))
-        self.assertTrue(lovett.util.is_trace_string("*=1"))
-        self.assertFalse(lovett.util.is_trace_string("*FOO*=1"))
-
     def test_is_silent(self):
         self.assertTrue(lovett.util.is_silent(lovett.tree.parse("(NP *con*)")))
         self.assertTrue(lovett.util.is_silent(lovett.tree.parse("(NP *pro*)")))
