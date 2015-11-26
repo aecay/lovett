@@ -21,7 +21,10 @@ overloading of python operators.  The following are supported:
 - conjunction via the ``&`` operator
 - disjunction via the ``|`` operator
 - negation via the ``~`` operator
-- (TODO) ``^`` for dominance, ``>`` for precedence
+- sisterwise precedence via the ``>`` operator
+- immediate sisterwise precedence via the ``>>`` operator
+- immediate dominance via the ``^`` operator
+- (TODO) ``@`` for metadata
 
 Because the operator precedence rules can sometimes be unexpected (the boolean
 operators are originally for bitwise arithmetic in Python, for example),
@@ -34,6 +37,7 @@ import re
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import union, intersect
 import itertools
+import functools
 
 import lovett.util as util
 
@@ -112,6 +116,84 @@ class QueryFunction(metaclass=abc.ABCMeta):
         """
         return Not(self)
 
+    def _operator(self, other, fn):
+        """Generic function implementing operator overloading."""
+
+        if isinstance(other, QueryFunction):
+            return And(self, fn(other))
+        elif isinstance(other, tuple):
+            if len(other) == 1:
+                return And(self, fn(other[0]))
+            else:
+                return And(self, functools.reduce(And, map(fn, other)))
+        else:
+            raise ValueError("An invalid argument was passed to an operator overload: %s" % other)
+
+    def __gt__(self, other):
+        """Sisterwise precedence on the ``>`` operator.
+
+        The RHS can be a `QueryFunction`: ``label("FOO") > label("BAR")`` is
+        equivalent to ``label("FOO") & idoms(label("BAR"))``.  Furthermore,
+        the RHS can be a tuple: ``label("FOO") > (label("BAR"),
+        label("BAZ"))`` is equivalent to ``label("FOO") & idoms(label("BAR"))
+        & idoms(label("BAZ"))``.
+
+        """
+
+        return self._operator(other, sprec)
+
+    def __rshift__(self, other):
+        """Immediate sisterwise precedence on the ``>>`` operator.
+
+        See `QueryFunction.__gt__` for discussion of the possibilities this
+        operator offers.
+
+        """
+
+        return self._operator(other, isprec)
+
+    def __xor__(self, other):
+        """Immediate dominance on the ``^`` operator.
+
+        The RHS can be a `QueryFunction`: ``label("FOO") ^ label("BAR")`` is
+        equivalent to ``label("FOO") & idoms(label("BAR"))``.  Furthermore,
+        the RHS can be a tuple: ``label("FOO") ^ (label("BAR"),
+        label("BAZ"))`` is equivalent to ``label("FOO") & idoms(label("BAR"))
+        & idoms(label("BAZ"))``.
+
+        Note that this can combine with the ``>`` precedence operator.
+        ``label("FOO") ^ (label("BAR") > label("BAZ"))`` matches structures
+        like::
+
+                 FOO
+                 /\
+                /  \
+              BAR  BAZ
+
+        Where the ordering between ``BAR`` and ``BAZ`` is important (but other
+        elements can intervene).  Compare this to ``label("FOO") ^
+        (label("BAR"), label("BAZ"))`` where the greater-than sign is changed
+        to a comma inside the parentheses.  This matches similar structures,
+        but allows the order of ``BAR`` and ``BAZ`` to be permuted.
+
+        .. note::
+
+            The ``>``, ``>>``, and ``^`` operators are considered
+            experimental.  They are included in order to get feedback on how
+            they might make it easier to write lovett queries.  But they could
+            be removed if they turn out to be difficult to support or
+            confusing.
+
+            You can convert from these experimental operators to a
+            fully-supported representation by using the `str` function to get
+            a representation of the query that does not use these functions::
+
+                TODO: example
+
+        """
+
+        return self._operator(other, idoms)
+
     @abc.abstractmethod
     def __str__(self):
         """Return the string representation of this query.
@@ -133,7 +215,46 @@ class And(QueryFunction):
         return self.left.match_tree(tree) and self.right.match_tree(tree)
 
     def sql(self, corpus):
-        return intersect(self.left.sql(corpus), self.right.sql(corpus))
+        # Other ideas: filter, join
+
+        # Originally we had this code:
+        # return intersect(self.left.sql(corpus), self.right.sql(corpus))
+
+        # The problem with it is that SQLite barfs on parenthesized
+        # intersections like SELECT ... INTERSECT (SELECT ... INTERSECT SELECT
+        # ...).  See https://www.sqlite.org/lang_select.html.
+
+        # One option would be to figure out how to convert And(x, And(y,z))
+        # into intersect(x,y,z) -- but even that might not work if we have
+        # nested And's and Or's.  So evidently we need to convert into a
+        # JOIN.
+
+        # We need an alias here so we get the two subqueries as anon_1 and
+        # anon_2.  Then our ON clause is "ON anon_1.rowid = anon_2.rowid".  If
+        # we didn't do this, we'd get "ON rowid = rowid", which SQLite doesn't
+        # like very much.
+        l = self.left.sql(corpus).alias()
+        # TODO: this is a really stupid way of getting the right column to
+        # join on.
+        lc = l.columns.get("id")
+        if lc is None:
+            lc = l.columns.get("left")
+        if lc is None:
+            lc = l.columns.get("parent")
+        if lc is None:
+            lc = l.columns.get("rowid")
+        r = self.right.sql(corpus).alias()
+        rc = r.columns.get("id")
+        if rc is None:
+            rc = r.columns.get("left")
+        if rc is None:
+            rc = r.columns.get("parent")
+        if rc is None:
+            rc = r.columns.get("rowid")
+        # Select the left column arbitrarily, since it doesn't matter which we
+        # use.  One might think we could use l.join(r).select(lc), but that
+        # gives an incorrect result.
+        return select([lc]).select_from(l.join(r, lc == rc))
 
     def __str__(self):
         # TODO: we add lots of extra parens to make sure we're getting scoping
@@ -230,13 +351,13 @@ class idoms(WrapperQueryFunction):
         s = self.query.sql(corpus)
         return select([corpus.dom.c.parent]).where(
             (corpus.dom.c.depth == 1) &
-            (corpus.dom.c.child == s)
+            (corpus.dom.c.child.in_(s))
         )
 
 
 # TODO: convenience functions:
-# - daughters(x, y, z) -> daughter(x) & daughter(y) & ...
-# - daughters_ordered(x, y, z) -> daughter(x & sprec(y & sprec(z)))
+# - doms(x, y, z) -> doms(x) & doms(y) & ...
+# - doms_ordered(x, y, z) -> doms(x & sprec(y & sprec(z)))
 
 class doms(WrapperQueryFunction):
     """This class implements dominance queries at arbitrary depth.
@@ -265,7 +386,7 @@ class doms(WrapperQueryFunction):
         s = self.query.sql(corpus)
         return select([corpus.dom.c.parent]).where(
             (corpus.dom.c.depth > 0) &
-            (corpus.dom.c.child == s)
+            (corpus.dom.c.child.in_(s))
         )
 
 
@@ -315,7 +436,7 @@ class label(QueryFunction):
        queries::
 
            conjugations = [tense + mood for tense in ("P", "D")
-                                        for mood in ("","I","S")]
+                                        for mood  in ("","I","S")]
            conjugations.append("I")  ## imperative
            conjugations.append("")   ## infinitive -- if not restricted to tensed vbs
            verbs = [type + conjugation for type in ("VB","MD","HV", ...)
@@ -430,7 +551,7 @@ class sprec(WrapperQueryFunction):
 
     def match_tree(self, tree):
         parent = tree.parent
-        right_siblings = itertools.dropwhile(lambda x: x != tree, parent)
+        right_siblings = list(itertools.dropwhile(lambda x: x != tree, parent))
         if len(right_siblings) < 2:
             return False
         # tree itself is included in the list; drop it
@@ -440,7 +561,7 @@ class sprec(WrapperQueryFunction):
     def sql(self, corpus):
         return select([corpus.sprec.c.left]).where(
             (corpus.sprec.c.distance > 0) &
-            (corpus.sprec.c.right == self.query.sql(corpus))
+            (corpus.sprec.c.right.in_(self.query.sql(corpus)))
         )
 
 
@@ -457,7 +578,7 @@ class isprec(WrapperQueryFunction):
 
     def match_tree(self, tree):
         parent = tree.parent
-        right_siblings = itertools.dropwhile(lambda x: x != tree, parent)
+        right_siblings = list(itertools.dropwhile(lambda x: x != tree, parent))
         if len(right_siblings) < 2:
             return False
         # get the immediate right sibling
@@ -467,8 +588,11 @@ class isprec(WrapperQueryFunction):
     def sql(self, corpus):
         return select([corpus.sprec.c.left]).where(
             (corpus.sprec.c.distance == 1) &
-            (corpus.sprec.c.right == self.query.sql(corpus))
+            (corpus.sprec.c.right.in_(self.query.sql(corpus)))
         )
+
+# TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for
+# doms
 
 
 class text(QueryFunction):
@@ -502,7 +626,3 @@ class has_metadata(QueryFunction):
        blocked on properly handling metadata in `CorpusDb._insert_node`.
     """
     pass
-
-
-# TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for
-# daughters
