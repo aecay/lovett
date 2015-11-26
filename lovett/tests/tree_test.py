@@ -16,8 +16,42 @@ class UtilFnsTest(unittest.TestCase):
         self.assertIsNone(T.parse("  \n  "))
         self.assertRaises(T.ParseError, lambda: T.parse("(FOO"))
         self.assertRaises(T.ParseError, lambda: T.parse("(FOO))"))
+        self.assertRaises(T.ParseError, lambda: T.parse("(FOO bar))"))
         self.assertRaises(T.ParseError, lambda: T.parse("(FOO)"))
         self.assertRaises(T.ParseError, lambda: T.parse("(FOO bar baz)"))
+
+
+class IndexTest(unittest.TestCase):
+    def test_movement_index(self):
+        for tracetype in ["T", "ICH", "CL"]:
+            print(tracetype)
+            # Regular trace
+            t = T.parse("(NP *%s*-1)" % (tracetype,))
+            self.assertEqual(t.metadata.index, 1)
+            self.assertEqual(t.metadata.idx_type, "regular")
+            self.assertEqual(t.text, "*%s*" % (tracetype,))
+            self.assertEqual(t.label, "NP")
+
+            # NB: traces cannot be gaps!
+            t = T.parse("(NP *%s*=1)" % (tracetype,))
+            self.assertIsNone(t.metadata.index)
+            self.assertIsNone(t.metadata.idx_type)
+            self.assertEqual(t.text, "*%s*=1" % (tracetype,))
+            self.assertEqual(t.label, "NP")
+
+            # Invalid trace
+            t = T.parse("(NP *%s*-X)" % (tracetype,))
+            self.assertIsNone(t.metadata.index)
+            self.assertIsNone(t.metadata.idx_type)
+            self.assertEqual(t.text, "*%s*-X" % (tracetype,))
+            self.assertEqual(t.label, "NP")
+
+            # Invalid trace (gap)
+            t = T.parse("(NP *%s*=X)" % (tracetype,))
+            self.assertIsNone(t.metadata.index)
+            self.assertIsNone(t.metadata.idx_type)
+            self.assertEqual(t.text, "*%s*=X" % (tracetype,))
+            self.assertEqual(t.label, "NP")
 
 
 class TreeTest(unittest.TestCase):

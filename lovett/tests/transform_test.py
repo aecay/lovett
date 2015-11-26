@@ -26,3 +26,24 @@ class TransformTest(unittest.TestCase):
         t = T("(N-X foo)")
         trans.icepahc_case(t)
         self.assertIsNone(t.metadata.case)
+
+        # with indices -- should be taken care of by parsing code
+        t = T("(N-N-1 foo)")
+        trans.icepahc_case(t)
+        self.assertEqual(t.metadata.case, "nominative")
+
+        t = T("(N-A-1 foo)")
+        trans.icepahc_case(t)
+        self.assertEqual(t.metadata.case, "accusative")
+
+        t = T("(N-G-1 foo)")
+        trans.icepahc_case(t)
+        self.assertEqual(t.metadata.case, "genitive")
+
+        t = T("(N-D-1 foo)")
+        trans.icepahc_case(t)
+        self.assertEqual(t.metadata.case, "dative")
+
+        t = T("(N-X-1 foo)")
+        trans.icepahc_case(t)
+        self.assertIsNone(t.metadata.case)

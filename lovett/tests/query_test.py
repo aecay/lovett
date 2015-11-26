@@ -12,16 +12,20 @@ class QueryTest(unittest.TestCase):
         for group in groups:
             self.do_one(query, *group)
 
-    def do_one(self, query, tree_string, result):
+    def do_one(self, query, tree_string, result, fn=None):
         print("%s; %s" % (query, tree_string))
         t = T(tree_string)
-        self.assertEqual(query.match_tree(t), result)
+        if fn is None:
+            fn = lambda x: x
+        self.assertEqual(query.match_tree(fn(t)), result)
         d = db.CorpusDb()
         d.insert_tree(t)
         mt = d.matching_trees(query)
         if result:
-            self.assertEqual(len(mt) > 0, result)
-            self.assertEqual(t, mt[0])
+            self.assertEqual(len(mt), 1)
+            self.assertEqual(fn(t), mt[0])
+        else:
+            self.assertEqual(len(mt), 0)
 
     def test_label(self):
         l = Q.label("NP")
@@ -93,6 +97,84 @@ class QueryTest(unittest.TestCase):
                  ("(XP foo)", True))
         self.do_all(l, tests)
 
+    def test_doms(self):
+        l = Q.label("NP") & Q.doms(Q.label("N"))
+        self.assertEqual(str(l), "(label(\"NP\") & doms(label(\"N\")))")
+        tests = (("(NP (N foo))", True),
+                 ("(NP (XP (N foo)))", True),
+                 ("(NP (XP (YP (N foo))))", True),
+                 ("(NP (n (YP foo)))", False),
+                 ("(NP (n foo))", False))
+        self.do_all(l, tests)
+
+    idoms_tests = (("(NP (N foo))", True),
+                   ("(NP (N (X foo)))", True),
+                   ("(NP (XP (N foo)))", False),
+                   ("(NP (XP (YP (N foo))))", False),
+                   ("(NP (n (YP foo)))", False),
+                   ("(NP (n foo))", False))
+
+    def test_idoms(self):
+        l = Q.label("NP") & Q.idoms(Q.label("N"))
+        self.assertEqual(str(l), "(label(\"NP\") & idoms(label(\"N\")))")
+        self.do_all(l, type(self).idoms_tests)
+
+    def test_idoms_operator(self):
+        l = Q.label("NP") ^ Q.label("N")
+        self.assertEqual(str(l), "(label(\"NP\") & idoms(label(\"N\")))")
+        self.do_all(l, type(self).idoms_tests)
+
+    sprec_tests = (("(IP (XP foo) (YP bar))", True, lambda x: x[0]),
+                   ("(IP (XP foo) (ZP 123) (YP bar))", True, lambda x: x[0]),
+                   ("(IP (XP (ZP 123)) (WP xxx) (YP (ZP 456)))", True, lambda x: x[0]),
+                   ("(IP (XP (ZP 123)) (YP (ZP 456)))", True, lambda x: x[0]),
+                   ("(IP (ZP (XP foo)) (YP bar))", False, lambda x: x[0]),
+                   ("(IP (XP foo) (ZP (YP bar)))", False, lambda x: x[0]),
+                   ("(IP (ZP (XP foo) (YP bar)))", True, lambda x: x[0][0]),
+                   ("(IP (ZP (XP foo) (ZP xxx) (YP bar)) (XP quux))", True, lambda x: x[0][0]),
+                   ("(IP (ZP (XP foo) (YP bar)) (XP quux))", True, lambda x: x[0][0]))
+
+    def test_sprec(self):
+        l = Q.label("XP") & Q.sprec(Q.label("YP"))
+        self.assertEqual(str(l), '(label("XP") & sprec(label("YP")))')
+        self.do_all(l, type(self).sprec_tests)
+
+    def test_sprec_operator(self):
+        l = Q.label("XP") > Q.label("YP")
+        self.assertEqual(str(l), '(label("XP") & sprec(label("YP")))')
+        self.do_all(l, type(self).sprec_tests)
+
+    def test_sprec_operator_tuple(self):
+        l = Q.label("XP") > (Q.label("YP"), Q.label("ZP"))
+        self.assertEqual(str(l),
+                         '(label("XP") & (sprec(label("YP")) & sprec(label("ZP"))))')
+        tests = (("(IP (XP xxx) (YP yyy) (ZP zzz))", True, lambda x: x[0]),
+                 ("(IP (XP xxx) (ZP zzz) (YP yyy))", True, lambda x: x[0]),
+                 ("(IP (YP yyy) (XP xxx) (ZP zzz))", False, lambda x: x[0]),
+                 ("(IP (YP yyy) (ZP zzz) (XP xxx))", False, lambda x: x[0]),
+                 ("(IP (ZP zzz) (YP yyy) (XP xxx))", False, lambda x: x[0]))
+        self.do_all(l, tests)
+
+    isprec_tests = (("(IP (XP foo) (YP bar))", True, lambda x: x[0]),
+                    ("(IP (XP foo) (ZP 123) (YP bar))", False, lambda x: x[0]),
+                    ("(IP (XP (ZP 123)) (YP (ZP 456)))", True, lambda x: x[0]),
+                    ("(IP (XP (ZP 123)) (ZP xxx) (YP (ZP 456)))", False, lambda x: x[0]),
+                    ("(IP (ZP (XP foo)) (YP bar))", False, lambda x: x[0]),
+                    ("(IP (XP foo) (ZP (YP bar)))", False, lambda x: x[0]),
+                    ("(IP (ZP (XP foo) (YP bar)))", True, lambda x: x[0][0]),
+                    ("(IP (ZP (XP foo) (ZP xxx) (YP bar)) (XP quux))", False, lambda x: x[0][0]),
+                    ("(IP (ZP (XP foo) (YP bar)) (XP quux))", True, lambda x: x[0][0]))
+
+    def test_isprec(self):
+        l = Q.label("XP") & Q.isprec(Q.label("YP"))
+        self.assertEqual(str(l), '(label("XP") & isprec(label("YP")))')
+        self.do_all(l, type(self).isprec_tests)
+
+    def test_isprec_operator(self):
+        l = Q.label("XP") >> Q.label("YP")
+        self.assertEqual(str(l), '(label("XP") & isprec(label("YP")))')
+        self.do_all(l, type(self).isprec_tests)
+
     def test_text(self):
         q = Q.text("foo")
         self.do_all(q,
@@ -162,7 +244,7 @@ class QueryDbTest(unittest.TestCase):
         both = l & l2
 
         c = self.d.engine.connect()
-        res = c.execute(both.sql(self.d).order_by(self.d.nodes.c.rowid)).fetchall()
+        res = c.execute(both.sql(self.d)).fetchall()
         self.assertEqual(len(res), 1)
         self.assertEqual(self.d._reconstitute(res[0][0]), self.d[0][2])
 
@@ -189,6 +271,6 @@ class QueryDbTest(unittest.TestCase):
     def test_daughter_and(self):
         dq = Q.idoms(Q.label("NP")) & Q.idoms(Q.label("VBD"))
         c = self.d.engine.connect()
-        res = c.execute(dq.sql(self.d).order_by(self.d.dom.c.parent)).fetchall()
+        res = c.execute(dq.sql(self.d)).fetchall()
         self.assertEqual(len(res), 1)
         self.assertEqual(self.d._reconstitute(res[0][0]), self.d[0])
