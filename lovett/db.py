@@ -14,7 +14,7 @@ however:
 """
 
 import sqlalchemy
-from sqlalchemy import Table, Column, Integer, String, ForeignKey, MetaData
+from sqlalchemy import Table, Column, Integer, String, ForeignKey, MetaData, Index
 from sqlalchemy.sql import select
 
 import lovett.util as util
@@ -60,20 +60,28 @@ class CorpusDb(corpus.CorpusBase):
             self.metadata = MetaData()
             self.nodes = Table("nodes", self.metadata,
                                Column("rowid", Integer, primary_key=True),
-                               Column("label", String))
+                               Column("label", String)
+                               , Index("label_idx", "label")
+            )
             self.dom = Table("dom", self.metadata,
                              Column("parent", Integer, ForeignKey("nodes.rowid")),
                              Column("child", Integer, ForeignKey("nodes.rowid")),
-                             Column("depth", Integer))
+                             Column("depth", Integer)
+                             , Index("child_depth", "child", "depth")
+            )
             self.sprec = Table("sprec", self.metadata,
                                Column("left", Integer, ForeignKey("nodes.rowid")),
                                Column("right", Integer, ForeignKey("nodes.rowid")),
-                               Column("distance", Integer))
+                               Column("distance", Integer)
+                               , Index("right_distance", "right", "distance")
+            )
             self.roots = []
             self.tree_metadata = Table("metadata", self.metadata,
                                        Column("id", Integer, ForeignKey("nodes.rowid")),
                                        Column("key", String),
-                                       Column("value", String))
+                                       Column("value", String)
+                                       , Index("id_key", "id", "key")
+            )
             self.metadata.create_all(self.engine)
         else:
             # Create a corpus that is a clone of another corpus
@@ -125,16 +133,17 @@ class CorpusDb(corpus.CorpusBase):
             WHERE l.right = :left AND r.left = :right""")
         c.execute(update, left=left, right=right)
 
+    # TODO: use the util functions for metadata <-> string here
     def _insert_metadata(self, node_id, dic, prefix=""):
         c = self.engine.connect()
         for key, val in dic.items():
-            if isinstance(val, str):
+            if isinstance(val, tree.Metadata):
+                self._insert_metadata(node_id, val, prefix + key + ":")
+            else:
                 c.execute(self.tree_metadata.insert().values(
                     id=node_id,
                     key=prefix + key,
-                    value=val))
-            else:
-                self._insert_metadata(node_id, val, prefix + key + ":")
+                    value=str(val)))
 
     def _insert_node(self, node, parent=None, left=None):
         """Insert a node into the database.
