@@ -15,6 +15,7 @@ TODO: write more here
 import abc
 import collections.abc
 import lovett.tree
+import pyprind
 
 
 class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
@@ -30,12 +31,13 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
        really a well-defined order across texts.  It would be nice to express
        this programmatically somehow.
 
-       It would be good to use a doubly-linked list structure here, to allow
-       fecthing next/previous tree in constant time.  The alternative is for
-       trees to know their index within the corpus, which is not really what
-       we want if a tree can belong to multiple corpora e.g. when a search
-       yields a (sub)corpus as a result.  But see the note above about the
-       lack of total ordering...maybe we just have to impose one.
+       On another note, it would be good to use a doubly-linked list structure
+       here, to allow fecthing next/previous tree in constant time.  The
+       alternative is for trees to know their index within the corpus, which
+       is not really what we want if a tree can belong to multiple corpora
+       e.g. when a search yields a (sub)corpus as a result.  But see the note
+       above about the lack of total ordering...maybe we just have to impose
+       one.
 
        It would be nice to allow a functionality like the ``fix()`` function
        in the R console, which pops up an editor for a piece of data.  We
@@ -47,7 +49,7 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
 
     # TODO @abc.abstractmethod
     def matching_trees(query):
-        pass
+        raise NotImplemented
 
 
 class Corpus(CorpusBase, collections.abc.MutableSequence):
@@ -106,8 +108,10 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
         """Return a `CorpusDb` object containing the trees from the corpus."""
         import lovett.db as db
         d = db.CorpusDb()
+        p = pyprind.ProgBar(len(self))
         for t in self._trees:
             d.insert_tree(t)
+            p.update()
         return d
 
     def write_penn_treebank(self, handle):
