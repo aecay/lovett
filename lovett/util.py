@@ -215,3 +215,31 @@ def is_nonterminal(t):
 
 # def is_code_node(tree):
 #     return tree.label == "CODE"
+
+
+def _metadata_py_to_str(value):
+    """Convert a python metadata value into a metadata string."""
+    if isinstance(value, str):
+        return value
+    elif isinstance(value, bool):
+        if value:
+            return "yes"
+        else:
+            return "no"
+    elif isinstance(value, int):
+        return str(value)
+    else:
+        raise ValueError("Cannot convert value %s of type %s to metadata string" % (value, type(value)))
+
+
+def _metadata_str_to_py(value):
+    """Convert a metadata string into a python value."""
+    if value == "yes":
+        return True
+    elif value == "no":
+        return False
+    else:
+        try:
+            return int(value)
+        except ValueError:
+            return str(value)
