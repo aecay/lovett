@@ -78,7 +78,6 @@ class Tree(metaclass=abc.ABCMeta):
 
     def __init__(self, label, metadata=None):
         self.parent = None
-        # TODO: we might want to parse metadata
         self.metadata = Metadata(metadata or {})
         label, idxtype, idx = util.label_and_index(label)
         self._label = label
@@ -231,9 +230,8 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     __slots__ = ["_children"]
 
     def __init__(self, label, children, metadata=None):
-        # TODO: use *args magic to not need the list brax around children?
         super(NonTerminal, self).__init__(label, metadata)
-        # coerce to a list; we don't want any generators to sneak in
+        # Coerce to a list; we don't want any generators to sneak in
         self._children = list(children)
         for child in self._children:  # pragma: no branch
             child.parent = self
