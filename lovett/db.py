@@ -7,7 +7,7 @@ however:
 
 * The corpus is immutable.  It is only possible to append new trees to the end
   of the corpus (and in normal use even this should not be done).
-* The `CorpusBase.matching_trees` methods for searching by evaluating a
+* The `CorpusBase.matching_trees` method for searching by evaluating a
   `QueryFunction` against the corpus is significantly optimized by the
   database engine.
 
@@ -26,18 +26,18 @@ class CorpusDb(corpus.CorpusBase):
     """A class implementing an indexed corpus.
 
     In order to operate, this class uses the `SQLite
-    <https://www.sqlite.org/>`_ database engine, wrapped by the `sqlalchemy
-    Python library <http://www.sqlalchemy.org/>`_ (except for a few raw SQL
-    statements, which in principle should be removed to the extent possible).
-    Using SQLite brings the benefit of a mature and heavily optimized indexing
-    engine.  SQLAlchemy provides a flexible programmatic interface for
-    building SQL queries, eliminating the need to munge strings manually.
+    <https://www.sqlite.org/>`_ database engine, wrapped by the `SQLAlchemy
+    Python library <http://www.sqlalchemy.org/>`_.  Using SQLite brings the
+    benefit of a mature and heavily optimized indexing engine.  SQLAlchemy
+    provides a flexible programmatic interface for building SQL queries,
+    eliminating the need to munge strings manually.
 
-    The indexing strategy is described in the documentation at `indexing`.
+    The storage and indexing strategy is described in the documentation at
+    `indexing`.
 
     .. note:: TODO
 
-       the roots attribute needs more work
+       the roots attribute needs more work (is this still true? 12/1/15)
 
     Attributes:
         engine (`sqlalchemy.engine.Engine`): the database engine (*private*)
@@ -49,11 +49,15 @@ class CorpusDb(corpus.CorpusBase):
         sprec (`sqlalchemy.schema.Table`): reflexive sister-precedence.
             Columns: ``left``, ``right``, ``distance``.
         roots (list): the root nodes in the corpus.
-        metadata (`sqlalchemy.schema.Table`): metadata for each node.
+        tree_metadata (`sqlalchemy.schema.Table`): metadata for each node.
             Columns: ``id``, ``key``, ``value``.
+        id (int): The next id available for inserting a node.  Methods which
+            actually use this value to insert a node are responsible for
+            incrementing this value.
 
     """
     def __init__(self, other=None, roots=None):
+        """TODO: document"""
         if other is None:
             # Initialize an empty corpus, creating the db from scratch
             self.engine = sqlalchemy.create_engine("sqlite:///:memory:")
@@ -86,6 +90,7 @@ class CorpusDb(corpus.CorpusBase):
             self.id = 1
         else:
             # Create a corpus that is a clone of another corpus
+            # TODO: make this a class method, not a variant of init
             self.engine = other.engine
             self.metadata = other.metadata
             self.nodes = other.nodes
@@ -104,40 +109,23 @@ class CorpusDb(corpus.CorpusBase):
 
             self.id = other.id
 
-    def _add_child(self, parent, child):
-        """Add a parent-child relationship to the database.
+    def _insert_metadata(self, c, node_id, dic, prefix=""):
+        """Inner function for inserting metadata into the database.
 
-        This method and `_add_sibling` are responsible for maintaining the
-        dominance and sister-precendece tables.
-
-        .. note:: TODO
-
-           We should use SQL triggers for this, instead of explicit method calls.
+        Metadata are represented in a table with columns ``id``, ``key``, and
+        ``value``.  Nested metadata values are converted into a string key for
+        the database by joining their key path with ``:``.  The
+        `_metadata_py_to_str` function is used to translate metadata values
+        into strings.
 
         Args:
-            parent (int): database id of the parent node.
-            child (int): database id of the child node.
+            c (sqlalchemy.engine.Connection): A connection to the database.
+            node_id (int): The database id of the node to which the metadata
+                are affiliated.
+            dic (Metadata): Metadata to insert.
+            prefix (str): The key path at which to insert this metadata.
 
         """
-        c = self.engine.connect()
-        update = sqlalchemy.sql.text(
-            """INSERT INTO dom (parent, child, depth)
-            SELECT p.parent, c.child, p.depth+c.depth+1
-            FROM dom p, dom c
-            WHERE p.child = :parent AND c.parent = :child""")
-        c.execute(update, parent=parent, child=child)
-
-    def _add_sibling(self, left, right):
-        c = self.engine.connect()
-        update = sqlalchemy.sql.text(
-            """INSERT INTO sprec (left, right, distance)
-            SELECT l.left, r.right, l.distance+r.distance+1
-            FROM sprec l, sprec r
-            WHERE l.right = :left AND r.left = :right""")
-        c.execute(update, left=left, right=right)
-
-    # TODO: use the util functions for metadata <-> string here
-    def _insert_metadata(self, c, node_id, dic, prefix=""):
         for key, val in dic.items():
             if isinstance(val, tree.Metadata):
                 self._insert_metadata(node_id, val, prefix + key + ":")
@@ -145,60 +133,25 @@ class CorpusDb(corpus.CorpusBase):
                 c.execute(self.tree_metadata.insert().values(
                     id=node_id,
                     key=prefix + key,
-                    value=str(val)))
+                    value=util._metadata_py_to_str(val)))
 
-    def _insert_node(self, node, parent=None, left=None):
+    def _insert_node(self, c, node, parents=(), lefts=()):
+
         """Insert a node into the database.
 
         Args:
-            node (Tree): the node to be inserted.
-            parent (int): the database id of the parent node, if any.
-                Will be passed to `_add_child`.
-            left (int): the database id of the left sibling, if any.
-                Will be passed to `_add_sibling`.
+            c (sqlalchemy.engine.Connection): A connection to the database.
+            node (Tree): The node to be inserted.
+            parents (tuple): The database ids of the ancestor nodes, if any,
+                in ascending order (immediate parent = element 0)
+            left (int): The database ids of the left siblings, if any, in
+                right-to-left order (the immediate left sibling = element 0)
 
         Returns:
-            int: the database id of the inserted node.
+           int: the database id of the inserted node.
 
         """
-        # TODO: to optimize:
-        # - make parent and left args into sequences: ancestors and spreceders
-        # - rewrite _add_child and _add_sibling not to SELECT
-        # - (if needed) accumulate inserts in python; do single batch insert
-        c = self.engine.connect()
-        # Insert this node's label into the db
-        c.execute(self.nodes.insert(), label=node.label)
-        # Get the database id.
-        # TODO: maybe get rid of this and use an incrementing python variable,
-        # in order to allow for batch inserts
-        rowid = c.execute(sqlalchemy.sql.text("SELECT last_insert_rowid()")).fetchone()[0]
-        # Add it to the dominance_R table
-        c.execute(self.dom.insert(), parent=rowid, child=rowid, depth=0)
-        # Add it to the sprecedes_R table
-        c.execute(self.sprec.insert(), left=rowid, right=rowid, distance=0)
-        # Make it a child of its parent, if applicable
-        if parent:
-            self._add_child(parent, rowid)
-        if left:
-            self._add_sibling(left, rowid)
-        # Add its text to the metadata db...
-        if util.is_leaf(node):
-            c.execute(self.tree_metadata.insert(), id=rowid, key="text", value=node.text)
-        # ...or add its children to the db, as applicable
-        if util.is_nonterminal(node):
-            lastchild_rowid = None
-            for child in node:
-                lastchild_rowid = self._insert_node(child, rowid, lastchild_rowid)
-        self._insert_metadata(rowid, node.metadata)
-        return rowid
 
-    def _insert_node2(self, c, node, parents=(), lefts=()):
-        """TODO: document
-
-        TODO: a further-optimized version that accumulates all the db records
-        in python and then inserts them using only one insert statement
-
-        """
         # Insert this node's label into the db
         rowid = self.id
         self.id += 1
@@ -228,35 +181,42 @@ class CorpusDb(corpus.CorpusBase):
             p = (rowid,) + parents
             lastchild_rowids = ()
             for child in node:
-                tmp = self._insert_node2(c, child, p, lastchild_rowids)
+                tmp = self._insert_node(c, child, p, lastchild_rowids)
                 lastchild_rowids = (tmp,) + lastchild_rowids
         self._insert_metadata(c, rowid, node.metadata)
         return rowid
 
-    def _insert_tree2(self, conn, t):
-        rowid = self._insert_node2(conn, t)
-        self.roots.append(rowid)
+    def _insert_tree(self, conn, t):
+        """An inner function to perform insertion of a tree.
 
-    def insert_tree2(self, t):
-        """TODO: copy docstring."""
-        with self.engine.begin() as conn:
-            self._insert_tree2(conn, t)
-
-    def insert_trees2(self, trees):
-        """TODO: docstring."""
-        with self.engine.begin() as conn:
-            for t in trees:
-                self._insert_tree2(conn, t)
-
-    def insert_tree(self, t):
-        """Insert a tree into the corpus.
-
-        This method wraps `_insert_node`, and also handles adding the root to
-        the appropriate table.
+        Should not be called directly.  In addition to calling `_insert_node`,
+        this function adds the tree's database id to the `roots` attribute of
+        the class.
 
         """
-        rowid = self._insert_node(t)
+        rowid = self._insert_node(conn, t)
         self.roots.append(rowid)
+
+    def insert_tree(self, t):
+        """Insert a single tree into the corpus.
+
+        This method wraps `_insert_tree`.
+
+        """
+        with self.engine.begin() as conn:
+            self._insert_tree(conn, t)
+
+    def insert_trees(self, trees):
+        """Insert a sequence of trees into the corpus.
+
+        This method wraps `_insert_tree`.  It is more efficient than
+        `insert_tree` because it uses a single database transaction for the
+        whole insertion, rather than committing after each tree is inserted.
+
+        """
+        with self.engine.begin() as conn:
+            for t in trees:
+                self._insert_tree(conn, t)
 
     def _reconstitute_metadata(self, rowid):
         """TODO: document this function.
@@ -269,15 +229,15 @@ class CorpusDb(corpus.CorpusBase):
         ).fetchall()
         m = tree.Metadata({})
         for k, v in metadata:
-            if k == "text":
-                # A hack :(
+            if k in util.INTERNAL_METADATA_KEYS:
+                # Don't process it.
                 continue
             # TODO: This is a really inelegant way to do it...
             _m = m
             ks = k.split(":")
             for _k in ks[:-1]:
                 _m = _m[_k]
-            _m[ks[-1]] = v
+            _m[ks[-1]] = util._metadata_str_to_py(v)
         return m
 
     def _reconstitute(self, rowid):

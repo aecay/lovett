@@ -6,6 +6,11 @@ SILENT_TYPES = ["*con*", "*exp*", "*pro*"]
 IDX_GAP = "gap"
 IDX_REGULAR = "regular"
 
+#: A list of metadata keys which are used internally by Lovett.  Because these
+#: are all lowercase, there should be no collision with user keys (which must
+#: be uppercase).
+INTERNAL_METADATA_KEYS = ["text"]
+
 # ### Tree validation
 # # TODO: this fn is untested
 # def validateIndices(tree):
@@ -219,7 +224,25 @@ def is_nonterminal(t):
 
 
 def _metadata_py_to_str(value):
-    """Convert a python metadata value into a metadata string."""
+    """Convert a python metadata value into a metadata string.
+
+    Strings are passed through as-is.  `bool` objects are transformed into the
+    strings ``"yes"`` and ``"no"``.  `int` obejcts are transformed into
+    strings.
+
+    .. note:: TODO
+
+        What to do about float values?  Possible lossy encoding...
+
+        Should we make the "yes" and "no" sentinel values more unique, so as
+        not to lose the distinction between yes-as-string and yes-as-bool?
+        Probably not -- too fussy for users, for whom we should just DTRT
+        automatically.
+
+    Args:
+        value: The value to convert.
+
+    """
     if isinstance(value, str):
         return value
     elif isinstance(value, bool):
@@ -234,7 +257,17 @@ def _metadata_py_to_str(value):
 
 
 def _metadata_str_to_py(value):
-    """Convert a metadata string into a python value."""
+    """Convert a metadata string into a python value.
+
+    The strings "yes" and "no" are converted into boolean ``True`` and
+    ``False`` respectively.  Otherwise, we attempt to convert the string to an
+    integer (using Python's built-in `int`).  If this fails, the string is
+    returned unmodified.
+
+    Args:
+        value (str): The value to convert.
+
+    """
     if value == "yes":
         return True
     elif value == "no":
@@ -243,4 +276,4 @@ def _metadata_str_to_py(value):
         try:
             return int(value)
         except ValueError:
-            return str(value)
+            return value
