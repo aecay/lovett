@@ -382,6 +382,17 @@ class WrapperQueryFunction(QueryFunction):
 
         return idx, doc.getvalue()
 
+    def sql(self, corpus):
+        """TODO: why do we need this?
+
+        If we have something like ``idoms(label("NP"))``, we'll get the same
+        result twice for s structure like ``(XP (NP one) (NP two))``
+
+        TODO: how to arrange for this to be called by all subclasses?
+
+        """
+        pass
+
 class MarkingQueryFunction(abc.ABC, QueryFunction):
     """This class implements common functionality for queries which should mark
     their matching node.
@@ -456,7 +467,7 @@ class idoms(WrapperQueryFunction):
         return select([corpus.dom.c.parent]).where(
             (corpus.dom.c.depth == 1) &
             (corpus.dom.c.child.in_(s))
-        )
+        ).distinct()
 
 
 # TODO: convenience functions:
@@ -491,7 +502,7 @@ class doms(WrapperQueryFunction):
         return select([corpus.dom.c.parent]).where(
             (corpus.dom.c.depth > 0) &
             (corpus.dom.c.child.in_(s))
-        )
+        ).distinct()
 
 
 class label(MarkingQueryFunction):
@@ -667,7 +678,7 @@ class sprec(WrapperQueryFunction):
         return select([corpus.sprec.c.left]).where(
             (corpus.sprec.c.distance > 0) &
             (corpus.sprec.c.right.in_(self.query.sql(corpus)))
-        )
+        ).distinct()
 
 
 class isprec(WrapperQueryFunction):
@@ -694,7 +705,7 @@ class isprec(WrapperQueryFunction):
         return select([corpus.sprec.c.left]).where(
             (corpus.sprec.c.distance == 1) &
             (corpus.sprec.c.right.in_(self.query.sql(corpus)))
-        )
+        ).distinct()
 
 # TODO: convenience fns sprec_multiple and sprec_multiple_ordered like for
 # doms
