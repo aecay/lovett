@@ -37,6 +37,9 @@ add_module_names = False
 
 trim_footnote_reference_space = True
 
+html_static_path = ["static/"]
+html_style = "doc.css"
+
 # Skip stupid autodoc stuff
 
 

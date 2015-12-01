@@ -1,0 +1,11 @@
+@import "../_static/alabaster.css";
+
+dd div.admonition {
+    margin-left: 0px !important;
+    padding-left: 30px !important;
+}
+
+dl dl pre {
+    margin-left:  0px !important;
+    padding-left: 30px !important;
+}
