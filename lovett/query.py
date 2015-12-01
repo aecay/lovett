@@ -37,17 +37,16 @@ careful attention to parenthesization is needed.
 import abc
 import re
 from sqlalchemy.sql import select
-from sqlalchemy.sql.expression import union, intersect
+from sqlalchemy.sql.expression import union
 import itertools
 import functools
+from yattag import Doc
 
 import lovett.util as util
 
-# TODO: label("FOO") ^ label("BAR") -> foo idoms bar
-# label("FOO") ^ (label("BAR") > label("BAZ")) -> foo idoms bar, foo idoms
-# baz, bar (s)precedes baz
-# label("FOO") ^ (label("BAR"), label("BAZ")) -> foo idoms bar, foo idoms baz,
-# no ordering between bar and baz
+# TODO: document, get better colors, have colors dynamically generated
+_HIGHLIGHT_COLORS = ["red", "blue", "green", "purple", "orange",
+                     "yellow", "brown"]
 
 
 class QueryFunction(metaclass=abc.ABCMeta):
@@ -206,6 +205,28 @@ class QueryFunction(metaclass=abc.ABCMeta):
         """
         pass
 
+    def _repr_html_(self):
+        """TODO: document
+
+        Including why we call out to a separate method (for the index
+        argument).
+
+        """
+        return self._to_html(0)[1]
+
+    @abc.abstractmethod
+    def _to_html(self, idx):
+        """TODO: document.
+
+        Returns a tuple new_idx, string.  Newidx is the new index to be used
+        in further computations (if we incremented it.)
+
+        TODO: figure out how to use just one Doc instance, rather than
+        creating one per call in the children
+
+        """
+        pass
+
 
 class And(QueryFunction):
     """This class implements conjunction of query functions."""
@@ -264,6 +285,17 @@ class And(QueryFunction):
         # parens for or, but not and
         return "(" + str(self.left) + " & " + str(self.right) + ")"
 
+    def _to_html(self, idx):
+        idx, left_html = self.left._to_html(idx)
+        idx, right_html = self.right._to_html(idx)
+        doc, tag, txt = Doc().tagtext()
+        with tag("span", klass="searchnode searchnode-and"):
+            doc.asis(left_html)
+            txt(" & ")
+            doc.asis(right_html)
+
+        return idx, doc.getvalue()
+
 
 class Or(QueryFunction):
     """This class implements disjunction of query functions."""
@@ -278,10 +310,23 @@ class Or(QueryFunction):
         return self.right.match_tree(tree)
 
     def sql(self, corpus):
+        # TODO: needs the same treatemnt that we gave ``And`` replacing
+        # intersect with join (but will it work?!?)
         return union(self.left.sql(corpus), self.right.sql(corpus))
 
     def __str__(self):
         return "(" + str(self.left) + " | " + str(self.right) + ")"
+
+    def _to_html(self, idx):
+        idx, left_html = self.left._to_html(idx)
+        idx, right_html = self.right._to_html(idx)
+        doc, tag, txt = Doc().tagtext()
+        with tag("span", klass="searchnode searchnode-or"):
+            doc.asis(left_html)
+            txt(" | ")
+            doc.asis(right_html)
+
+        return idx, doc.getvalue()
 
 
 class Not(QueryFunction):
@@ -303,6 +348,15 @@ class Not(QueryFunction):
     def __str__(self):
         return "~" + str(self.fn)
 
+    def _to_html(self, idx):
+        idx, html = self.fn._to_html(idx)
+        doc, tag, txt = Doc().tagtext()
+        with tag("span", klass="searchnode searchnode-not"):
+            txt("~")
+            doc.asis(html)
+
+        return idx, doc.getvalue()
+
 
 class WrapperQueryFunction(QueryFunction):
     """This class implements common functionality for queries which wrap another
@@ -317,6 +371,54 @@ class WrapperQueryFunction(QueryFunction):
 
     def __str__(self):
         return "%s(%s)" % (self.name, str(self.query))
+
+    def _to_html(self, idx):
+        idx, html = self.query._to_html(idx)
+        doc, tag, txt = Doc().tagtext()
+        with tag("span", klass="searchnode searchnode-%s" % self.name):
+            txt("%s(" % self.name)
+            doc.asis(html)
+            txt(")")
+
+        return idx, doc.getvalue()
+
+class MarkingQueryFunction(abc.ABC, QueryFunction):
+    """This class implements common functionality for queries which should mark
+    their matching node.
+
+    Attributes: _name (str): the name of this query, for use in string
+        representations.
+
+    """
+    def __init__(self, name):
+        self._name = name
+
+    @abc.abstractmethod
+    def _args(self):
+        """Return the arguments of this function in a format suitable for use in a
+        human-readable representation."""
+        pass
+
+    def __str__(self):
+        return "%s(%s)" % (self._name, self._args())
+
+    def _to_html(self, idx):
+        color = _HIGHLIGHT_COLORS[idx]
+        doc, tag, txt = Doc().tagtext()
+        with tag("span",
+                 klass="searchnode searchnode-%s" % self._name,
+                 style="border: 1px solid %s;" % color):
+            txt("%s(" % self._name)
+            txt(self._args())
+            txt(")")
+
+        return idx + 1, doc.getvalue()
+
+    # @abc.abstractmethod
+    def mark_tree(t, idx):
+        # TODO: implement marking of trees; relies on generating marks in
+        # Tree._repr_html_
+        pass
 
 
 class idoms(WrapperQueryFunction):
@@ -392,7 +494,7 @@ class doms(WrapperQueryFunction):
         )
 
 
-class label(QueryFunction):
+class label(MarkingQueryFunction):
     """This class implements matching tree node labels.
 
     The ``label`` slot (and argument to the initializer function) provides
@@ -473,6 +575,7 @@ class label(QueryFunction):
             exact (bool): whether to require an exact match
 
         """
+        super().__init__("label")
         self.label = label
         self.exact = exact
 
@@ -508,10 +611,9 @@ class label(QueryFunction):
                 corpus.nodes.c.label.like(self.label + "-%")
             )
 
-    def __str__(self):
-        return "label(\"%s\"%s)" % (str(self.label),
-                                    ", exact=True" if self.exact else "")
-        return self._str
+    def _args(self):
+        return "\"%s\"%s" % (str(self.label),
+                             ", exact=True" if self.exact else "")
 
 
 class dash_tag(label):
@@ -529,9 +631,10 @@ class dash_tag(label):
     def __init__(self, tag):
         self.tag = tag
         self.label = re.compile("-" + re.escape(tag) + "(-|$)")
+        self._name = "dash_tag"
 
-    def __str__(self):
-        return "dash_tag(\"%s\")" % self.tag
+    def _args(self):
+        return "\"%s\"" % self.tag
 
     def sql(self, corpus):
         return select([corpus.nodes.c.rowid]).where(
@@ -597,7 +700,7 @@ class isprec(WrapperQueryFunction):
 # doms
 
 
-class text(QueryFunction):
+class text(MarkingQueryFunction):
     """This class implements matching text of leaf nodes.
 
     .. note:: TODO
@@ -605,10 +708,11 @@ class text(QueryFunction):
        matching regexp, set
     """
     def __init__(self, text):
+        super().__init__("text")
         self.text = text
 
-    def __str__(self):
-        return "text(\"%s\")" % self.text
+    def _args(self):
+        return "\"%s\"" % self.text
 
     def match_tree(self, tree):
         return util.is_leaf(tree) and tree.text == self.text
@@ -625,6 +729,7 @@ class has_metadata(QueryFunction):
 
     .. note:: TODO
 
-       blocked on properly handling metadata in `CorpusDb._insert_node`.
+        - blocked on properly handling metadata in `CorpusDb._insert_node` (can now complete)
+        - Should it be marking? Probably yes
     """
     pass

@@ -2,3 +2,4 @@ requests~=2.7
 pygithub~=1.25
 sqlalchemy~=1.0
 pyprind
+yattag
