@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import unittest
 import sqlalchemy
 # import textwrap
-# from nose.plugins.skip import SkipTest
+from nose.plugins.skip import SkipTest
 
 import lovett.tree as T
 
@@ -64,3 +64,6 @@ class CorpusTest(unittest.TestCase):
         d.insert_tree(t)
         self.assertEqual(d[0], t)
         self.assertEqual(d[0][0][0].metadata.lemma, "a")
+
+    def test_recursive_metadata(self):
+        raise SkipTest

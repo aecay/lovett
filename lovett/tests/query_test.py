@@ -9,6 +9,7 @@ from doctest import Example
 from lxml.doctestcompare import LXMLOutputChecker
 
 
+# From https://stackoverflow.com/questions/321795/comparing-xml-in-a-unit-test-in-python
 class XmlTest(unittest.TestCase):
     def assertXmlEqual(self, got, want):
         checker = LXMLOutputChecker()
