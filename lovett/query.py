@@ -7,13 +7,15 @@ method (which dispatches to the appropriate mode).
 
 The first mode is *direct mode*, which is accessed through the
 `QueryFunction.match_tree` function.  This function receives as an argument a
-`Tree` object, and should return ``True`` if the tree matches the query.
+`Tree` object, and should return ``True`` if the tree matches the query, and
+``False`` otherwise.
 
 The second mode is *indexed mode*, accessed via the `QueryFunction.sql`
 instance method.  This method receives an instance of `CorpusDb` as an
 argument, and should return a SQLAlchemy `sqlalchemy.sql.expression.Select`
 object which will match the database ids of the matching nodes.  The function
-can access relevant sqlalchemy objects as fields of the ``corpus`` argument.
+can access relevant sqlalchemy column objects as fields of the ``corpus``
+argument.
 
 ``QueryFunction`` objects support a variety of combinatorics through
 overloading of python operators.  The following are supported:
