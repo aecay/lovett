@@ -72,6 +72,12 @@ class Metadata(collections.abc.MutableMapping):
         name = _check_metadata_name(name)
         del self._dict[name]
 
+    def __str__(self):
+        return str(self._dict)
+
+    def __repr__(self):
+        return repr(self._dict)
+
 
 class Tree(metaclass=abc.ABCMeta):
     __slots__ = ["parent", "metadata", "_label"]
@@ -183,6 +189,7 @@ class Leaf(Tree):
         self.text = text
 
     def __str__(self, indent=0):
+        # TODO: handle metadata
         idxstr = _index_string_for_metadata(self.metadata)
         text = self.text
         lemma = self.metadata.lemma
@@ -194,9 +201,9 @@ class Leaf(Tree):
             return ''.join(['(', self.label, idxstr, ' ', text, ')'])
 
     def __repr__(self):
-        return "Leaf('%s', '%s', metadata=%r)" % (self.label.replace("'", "\\'"),
-                                                  self.text.replace("'", "\\'"),
-                                                  self.metadata)
+        return "Leaf('%s', '%s'%s)" % (self.label.replace("'", "\\'"),
+                                       self.text.replace("'", "\\'"),
+                                       ", metadata=%r" % self.metadata if self.metadata != {} else "")
 
     def __eq__(self, other):
         return super(Leaf, self).__eq__(other) and \
@@ -292,10 +299,13 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     # Methods
     def __repr__(self):
         childstr = ", ".join(repr(c) for c in self)
-        return '%s(%r, [%s], metadata=%r)' % (type(self).__name__, self.label,
-                                              childstr, self.metadata)
+        return '%s(%r, [%s]%s)' % (type(self).__name__,
+                                   self.label,
+                                   childstr,
+                                   ", metadata=%r" % self.metadata if self.metadata != {} else "")
 
     def __str__(self, indent=0):
+        # TODO: handle metadata
         idxstr = _index_string_for_metadata(self.metadata)
         s = "(%s%s " % (self.label, idxstr)
         id = self.metadata.id
