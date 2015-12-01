@@ -133,11 +133,21 @@ class QueryFunction(metaclass=abc.ABCMeta):
     def __gt__(self, other):
         """Sisterwise precedence on the ``>`` operator.
 
-        The RHS can be a `QueryFunction`: ``label("FOO") > label("BAR")`` is
-        equivalent to ``label("FOO") & idoms(label("BAR"))``.  Furthermore,
-        the RHS can be a tuple: ``label("FOO") > (label("BAR"),
-        label("BAZ"))`` is equivalent to ``label("FOO") & idoms(label("BAR"))
-        & idoms(label("BAZ"))``.
+        The RHS can be a `QueryFunction`::
+
+            label("FOO") > label("BAR")
+
+        is equivalent to::
+
+            label("FOO") & idoms(label("BAR"))
+
+        Furthermore, the RHS can be a tuple::
+
+            label("FOO") > (label("BAR"), label("BAZ"))
+
+        is equivalent to::
+
+            label("FOO") & idoms(label("BAR")) & idoms(label("BAZ"))
 
         """
 
@@ -156,26 +166,41 @@ class QueryFunction(metaclass=abc.ABCMeta):
     def __xor__(self, other):
         """Immediate dominance on the ``^`` operator.
 
-        The RHS can be a `QueryFunction`: ``label("FOO") ^ label("BAR")`` is
-        equivalent to ``label("FOO") & idoms(label("BAR"))``.  Furthermore,
-        the RHS can be a tuple: ``label("FOO") ^ (label("BAR"),
-        label("BAZ"))`` is equivalent to ``label("FOO") & idoms(label("BAR"))
-        & idoms(label("BAZ"))``.
+        The RHS can be a `QueryFunction`::
 
-        Note that this can combine with the ``>`` precedence operator.
-        ``label("FOO") ^ (label("BAR") > label("BAZ"))`` matches structures
-        like::
+            label("FOO") ^ label("BAR")
+
+        is equivalent to::
+
+            label("FOO") & idoms(label("BAR"))
+
+        Furthermore, the RHS can be a tuple::
+
+            label("FOO") ^ (label("BAR"), label("BAZ"))
+
+        is equivalent to::
+
+            label("FOO") & idoms(label("BAR")) & idoms(label("BAZ"))
+
+        Note that this can combine with the ``>`` precedence operator::
+
+            label("FOO") ^ (label("BAR") > label("BAZ"))
+
+        matches structures like::
 
                  FOO
-                 /\
-                /  \
+                 /\\
+                /  \\
               BAR  BAZ
 
         Where the ordering between ``BAR`` and ``BAZ`` is important (but other
-        elements can intervene).  Compare this to ``label("FOO") ^
-        (label("BAR"), label("BAZ"))`` where the greater-than sign is changed
-        to a comma inside the parentheses.  This matches similar structures,
-        but allows the order of ``BAR`` and ``BAZ`` to be permuted.
+        elements can intervene).  Compare this to::
+
+            label("FOO") ^ (label("BAR"), label("BAZ"))
+
+        where the greater-than sign is changed to a comma inside the
+        parentheses.  This matches similar structures, but allows the order of
+        ``BAR`` and ``BAZ`` to be permuted.
 
         .. note::
 
