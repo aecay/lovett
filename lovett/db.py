@@ -60,29 +60,30 @@ class CorpusDb(corpus.CorpusBase):
             self.metadata = MetaData()
             self.nodes = Table("nodes", self.metadata,
                                Column("rowid", Integer, primary_key=True),
-                               Column("label", String)
-                               , Index("label_idx", "label")
-            )
+                               Column("label", String),
+                               Index("label_idx", "label"))
             self.dom = Table("dom", self.metadata,
                              Column("parent", Integer, ForeignKey("nodes.rowid")),
                              Column("child", Integer, ForeignKey("nodes.rowid")),
-                             Column("depth", Integer)
-                             , Index("child_depth", "child", "depth")
+                             Column("depth", Integer),
+                             Index("child_depth", "child", "depth")
+                             #, Index("parent_idx", "parent")
             )
             self.sprec = Table("sprec", self.metadata,
                                Column("left", Integer, ForeignKey("nodes.rowid")),
                                Column("right", Integer, ForeignKey("nodes.rowid")),
-                               Column("distance", Integer)
-                               , Index("right_distance", "right", "distance")
+                               Column("distance", Integer),
+                               Index("right_distance", "right", "distance")
+                               #, Index("left_idx", "left")
             )
-            self.roots = []
             self.tree_metadata = Table("metadata", self.metadata,
                                        Column("id", Integer, ForeignKey("nodes.rowid")),
                                        Column("key", String),
-                                       Column("value", String)
-                                       , Index("id_key", "id", "key")
-            )
+                                       Column("value", String),
+                                       Index("id_key", "id", "key"))
             self.metadata.create_all(self.engine)
+            self.roots = []
+            self.id = 1
         else:
             # Create a corpus that is a clone of another corpus
             self.engine = other.engine
@@ -100,6 +101,8 @@ class CorpusDb(corpus.CorpusBase):
                 self.roots = list(other.roots)
             else:
                 self.roots = roots
+
+            self.id = other.id
 
     def _add_child(self, parent, child):
         """Add a parent-child relationship to the database.
@@ -134,8 +137,7 @@ class CorpusDb(corpus.CorpusBase):
         c.execute(update, left=left, right=right)
 
     # TODO: use the util functions for metadata <-> string here
-    def _insert_metadata(self, node_id, dic, prefix=""):
-        c = self.engine.connect()
+    def _insert_metadata(self, c, node_id, dic, prefix=""):
         for key, val in dic.items():
             if isinstance(val, tree.Metadata):
                 self._insert_metadata(node_id, val, prefix + key + ":")
@@ -159,10 +161,16 @@ class CorpusDb(corpus.CorpusBase):
             int: the database id of the inserted node.
 
         """
+        # TODO: to optimize:
+        # - make parent and left args into sequences: ancestors and spreceders
+        # - rewrite _add_child and _add_sibling not to SELECT
+        # - (if needed) accumulate inserts in python; do single batch insert
         c = self.engine.connect()
         # Insert this node's label into the db
         c.execute(self.nodes.insert(), label=node.label)
         # Get the database id.
+        # TODO: maybe get rid of this and use an incrementing python variable,
+        # in order to allow for batch inserts
         rowid = c.execute(sqlalchemy.sql.text("SELECT last_insert_rowid()")).fetchone()[0]
         # Add it to the dominance_R table
         c.execute(self.dom.insert(), parent=rowid, child=rowid, depth=0)
@@ -183,6 +191,62 @@ class CorpusDb(corpus.CorpusBase):
                 lastchild_rowid = self._insert_node(child, rowid, lastchild_rowid)
         self._insert_metadata(rowid, node.metadata)
         return rowid
+
+    def _insert_node2(self, c, node, parents=(), lefts=()):
+        """TODO: document
+
+        TODO: a further-optimized version that accumulates all the db records
+        in python and then inserts them using only one insert statement
+
+        """
+        # Insert this node's label into the db
+        rowid = self.id
+        self.id += 1
+        c.execute(self.nodes.insert(), label=node.label, rowid=rowid)
+        # Add it to the dominance_R table
+        c.execute(self.dom.insert(),
+                  # Insert a depth-0 self-dominance relation...
+                  {"parent": rowid, "child": rowid, "depth": 0},
+                  # ...as well as dominance relations for all the node's parents
+                  *[{"parent": p, "child": rowid,
+                     # +1 because enumerate counts from 0
+                     "depth": d + 1}
+                    for d, p
+                    in enumerate(parents)])
+        # Add it to the sprecedes_R table; see comments above for explanation
+        # of the parts
+        c.execute(self.sprec.insert(),
+                  {"left": rowid, "right": rowid, "distance": 0},
+                  *[{"left": l, "right": rowid, "distance": d + 1}
+                    for d, l
+                    in enumerate(lefts)])
+        if util.is_leaf(node):
+            # Add its text to the metadata db...
+            c.execute(self.tree_metadata.insert(), id=rowid, key="text", value=node.text)
+        else:
+            # ...or add its children to the db, as applicable
+            p = (rowid,) + parents
+            lastchild_rowids = ()
+            for child in node:
+                tmp = self._insert_node2(c, child, p, lastchild_rowids)
+                lastchild_rowids = (tmp,) + lastchild_rowids
+        self._insert_metadata(c, rowid, node.metadata)
+        return rowid
+
+    def _insert_tree2(self, conn, t):
+        rowid = self._insert_node2(conn, t)
+        self.roots.append(rowid)
+
+    def insert_tree2(self, t):
+        """TODO: copy docstring."""
+        with self.engine.begin() as conn:
+            self._insert_tree2(conn, t)
+
+    def insert_trees2(self, trees):
+        """TODO: docstring."""
+        with self.engine.begin() as conn:
+            for t in trees:
+                self._insert_tree2(conn, t)
 
     def insert_tree(self, t):
         """Insert a tree into the corpus.

@@ -102,6 +102,7 @@ def label_and_index(s):
 # def index_type_from_string(s):
 #     return label_and_index(s)[1]
 
+
 # TODO: are traces leaves?
 def is_leaf(t):
     import lovett.tree
