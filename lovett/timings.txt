@@ -1,0 +1,89 @@
+### On chromebook
+
+# Insert2 with parent and left indices
+
+In [63]: d = lovett.db.CorpusDb()
+
+In [64]: %time for t in c[0:500]: d.insert_tree2(t)
+CPU times: user 25 s, sys: 227 ms, total: 25.2 s
+Wall time: 26.1 s
+
+# Insert
+
+In [65]: d = lovett.db.CorpusDb()
+
+In [66]: %time for t in c[0:500]: d.insert_tree(t)
+CPU times: user 33.7 s, sys: 43.3 ms, total: 33.7 s
+Wall time: 33.9 s
+
+# Insert2 w/o parent and left indices
+
+In [67]: d = lovett.db.CorpusDb()
+
+In [68]: %time for t in c[0:500]: d.insert_tree2(t)
+CPU times: user 24.1 s, sys: 83.3 ms, total: 24.2 s
+Wall time: 24.4 s
+
+# Same as above.  Near linear time complexity (?)
+
+In [72]: d = lovett.db.CorpusDb()
+
+In [73]: %time for t in c[0:1000]: d.insert_tree2(t)
+CPU times: user 1min 4s, sys: 280 ms, total: 1min 4s
+Wall time: 1min 5s
+
+# Same as above.  Python-based rowid sequencing
+
+In [88]: d = lovett.db.CorpusDb()
+
+In [89]: %time for t in c[0:500]: d.insert_tree2(t)
+CPU times: user 21.5 s, sys: 16.7 ms, total: 21.5 s
+Wall time: 21.5 s
+
+# Same as above, check for time complexity
+
+In [93]: d = lovett.db.CorpusDb()
+
+In [94]: %time for t in c[0:1000]: d.insert_tree2(t)
+CPU times: user 56.7 s, sys: 30 ms, total: 56.8 s
+Wall time: 57 s
+
+# Same as above, use single pooled connection
+
+In [101]: d = lovett.db.CorpusDb()
+
+In [102]: %time for t in c[0:500]: d.insert_tree2(t)
+CPU times: user 20.5 s, sys: 23.3 ms, total: 20.5 s
+Wall time: 20.5 s
+
+# Same as above, transaction-per-tree
+
+In [109]: d = lovett.db.CorpusDb()
+
+In [110]: %time for t in c[0:500]: d.insert_tree2(t)
+CPU times: user 18.9 s, sys: 30 ms, total: 18.9 s
+Wall time: 18.9 s
+
+# Same as above, single transaction
+
+In [122]: d = lovett.db.CorpusDb()
+
+In [123]: %time d.insert_trees2(c[0:500])
+CPU times: user 16.6 s, sys: 10 ms, total: 16.6 s
+Wall time: 16.7 s
+
+# Same as above, check for time complexity (...it’s bad)
+
+In [124]: d = lovett.db.CorpusDb()
+
+In [125]: %time d.insert_trees2(c[0:1000])
+CPU times: user 44.7 s, sys: 43.3 ms, total: 44.7 s
+Wall time: 44.8 s
+
+# transaction-per-tree, check time complexity
+
+In [126]: d = lovett.db.CorpusDb()
+
+In [127]: %time for t in c[0:1000]: d.insert_tree2(t)
+CPU times: user 44.9 s, sys: 0 ns, total: 44.9 s
+Wall time: 45 s
