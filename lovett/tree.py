@@ -169,7 +169,7 @@ class Tree(metaclass=abc.ABCMeta):
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
-    idxconn = "=" if metadata.idx_type == "gap" else "-"
+    idxconn = "=" if metadata.idx_type == util.IDX_GAP else "-"
     if idx:
         return idxconn + str(idx)
     return ""

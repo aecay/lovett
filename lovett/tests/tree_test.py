@@ -8,6 +8,7 @@ from nose.plugins.skip import SkipTest
 import lovett.tree as T
 from lovett.tree import NonTerminal as NT
 from lovett.tree import Leaf as L
+import lovett.util as util
 
 
 class UtilFnsTest(unittest.TestCase):
@@ -28,7 +29,7 @@ class IndexTest(unittest.TestCase):
             # Regular trace
             t = T.parse("(NP *%s*-1)" % (tracetype,))
             self.assertEqual(t.metadata.index, 1)
-            self.assertEqual(t.metadata.idx_type, "regular")
+            self.assertEqual(t.metadata.idx_type, util.IDX_REGULAR)
             self.assertEqual(t.text, "*%s*" % (tracetype,))
             self.assertEqual(t.label, "NP")
 
