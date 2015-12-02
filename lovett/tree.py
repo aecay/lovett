@@ -109,6 +109,18 @@ class Tree(metaclass=abc.ABCMeta):
     def _repr_html_(self):
         pass
 
+    def _label_html(self, doc):
+        doc, tag, txt = doc.tagtext()
+        with tag("span", klass="tree-label"):
+            colors = self.metadata.get("query_match_colors", ())
+            if len(colors) > 0:
+                doc.attr(style="color: %s;" % colors[0])
+            txt(self.label)
+            if len(colors) > 1:
+                for color in colors[1:]:
+                    with tag("span", style="color: %s;" % color):
+                        txt("✓")
+
     @abc.abstractmethod
     def _to_json_pre(self):
         pass
@@ -227,13 +239,7 @@ class Leaf(Tree):
     def _repr_html_(self):
         doc, tag, txt = Doc().tagtext()
         with tag("div", klass="tree-node tree-leaf"):
-            with tag("span", klass="tree-label"):
-                colors = self.metadata.get("query_match_colors", ())
-                if len(colors) > 0:
-                    doc.attr(style="color: %s;" % colors[0])
-                    if len(colors) > 1:
-                        print("Oops: more than one color for %r" % self)
-                txt(self.label)
+            self._label_html(doc)
             with tag("span", klass="tree-text"):
                 txt(self.text)
         return doc.getvalue()
@@ -339,13 +345,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     def _repr_html_(self):
         doc, tag, txt = Doc().tagtext()
         with tag("div", klass="tree-node"):
-            with tag("span", klass="tree-label"):
-                colors = self.metadata.get("query_match_colors", ())
-                if len(colors) > 0:
-                    doc.attr(style="color: %s;" % colors[0])
-                    if len(colors) > 1:
-                        print("Oops: more than one color for %r" % self)
-                txt(self.label)
+            self._label_html(doc)
             doc.asis("".join(map(lambda x: x._repr_html_(), self)))
         return doc.getvalue()
 
