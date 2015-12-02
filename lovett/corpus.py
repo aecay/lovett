@@ -127,3 +127,14 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
 
         """
         pass
+
+    def matching_trees(self, query, roots=None):
+        # TODO: use the roots arg to specify a query to bound recursion.  If
+        # we get a structure like (IP (NP ...) (VB ...) (NP ... (CP-REL
+        # (IP-SUB ...)))), a complicated `query`, and roots=Q.label("IP"), we
+        # will only match the query to the (in this case two) nodes that match
+        # the root query, and not test every node in the tree.  TODO:
+        # implement this in the db backend as well (just AND together the
+        # query and the root query?)  TODO: figure out if this would actually
+        # be an optimization
+        pass
