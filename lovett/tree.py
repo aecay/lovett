@@ -18,6 +18,8 @@ _METADATA_KEY_RX = re.compile("^[A-Z0-9-]+$")
 
 
 def _check_metadata_name(name):
+    if name in util.INTERNAL_METADATA_KEYS:
+        return name
     name_t = name.upper().replace("_", "-")
     if (not _METADATA_KEY_RX.match(name_t)) or name.startswith("-") or \
        name.endswith("-") or name == "GET":
@@ -33,16 +35,13 @@ class Metadata(collections.abc.MutableMapping):
         self._dict = dic
 
     def __getitem__(self, name):
-        _check_metadata_name(name)
-        return self._dict[name]
+        return self._dict[_check_metadata_name(name)]
 
     def __setitem__(self, name, value):
-        _check_metadata_name(name)
-        self._dict[name] = value
+        self._dict[_check_metadata_name(name)] = value
 
     def __delitem__(self, name):
-        _check_metadata_name(name)
-        del self._dict[name]
+        del self._dict[_check_metadata_name(name)]
 
     def __iter__(self):
         return iter(self._dict)
