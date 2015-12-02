@@ -64,6 +64,14 @@ class LabelTest(QueryTest):
         self.do_all(self.l, map(lambda x: ("(%s foo)" % x[0], x[1]), tests))
         self.do_all(self.l, map(lambda x: ("(%s (N foo))" % x[0], x[1]), tests))
 
+    def test_freduce(self):
+        res = []
+        self.l.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.l])
+
+    def test_freduce2(self):
+        self.assertEqual(self.l.freduce(lambda s, x: x + 1, 0), (1,))
+
 
 class LabelExactTest(QueryTest):
     def setUp(self):
@@ -127,6 +135,14 @@ class AndTest(QueryTest):
                  ("(NP (N bar))", False))
         self.do_all(self.a, tests)
 
+    def test_freduce(self):
+        res = []
+        self.a.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.a.left, self.a.right, self.a])
+
+    def test_freduce2(self):
+        self.assertEqual(self.a.freduce(lambda s, x: x + 1, 0), (3,))
+
 
 class OrTest(QueryTest):
     def setUp(self):
@@ -148,6 +164,14 @@ class OrTest(QueryTest):
                  ("(XP (N bar))", False))
         self.do_all(self.a, tests)
 
+    def test_freduce(self):
+        res = []
+        self.a.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.a.left, self.a.right, self.a])
+
+    def test_freduce2(self):
+        self.assertEqual(self.a.freduce(lambda s, x: x + 1, 0), (3,))
+
 
 class NotTest(QueryTest):
     def setUp(self):
@@ -168,6 +192,14 @@ class NotTest(QueryTest):
                  ("(XP foo)", True))
         self.do_all(self.l, tests)
 
+    def test_freduce(self):
+        res = []
+        self.l.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.l.fn, self.l])
+
+    def test_freduce2(self):
+        self.assertEqual(self.l.freduce(lambda s, x: x + 1, 0), (2,))
+
 
 class DomsTest(QueryTest):
     def setUp(self):
@@ -187,6 +219,14 @@ class DomsTest(QueryTest):
                  ("(NP (n (YP foo)))", False),
                  ("(NP (n foo))", False))
         self.do_all(self.l, tests)
+
+    def test_freduce(self):
+        res = []
+        self.l.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.l.left, self.l.right.query, self.l.right, self.l])
+
+    def test_freduce2(self):
+        self.assertEqual(self.l.freduce(lambda s, x: x + 1, 0), (4,))
 
 
 class IDomsTest(QueryTest):
@@ -216,6 +256,20 @@ class IDomsTest(QueryTest):
 
     def test_idoms_operator(self):
         self.do_all(self.l_oper, type(self).idoms_tests)
+
+    def test_freduce(self):
+        res = []
+        self.l.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.l.left, self.l.right.query, self.l.right, self.l])
+
+        res = []
+        self.l_oper.freduce(lambda x: res.append(x))
+        self.assertEqual(res, [self.l_oper.left, self.l_oper.right.query,
+                               self.l_oper.right, self.l_oper])
+
+    def test_freduce2(self):
+        self.assertEqual(self.l.freduce(lambda s, x: x + 1, 0), (4,))
+        self.assertEqual(self.l_oper.freduce(lambda s, x: x + 1, 0), (4,))
 
 
 def SprecTest(QueryTest):

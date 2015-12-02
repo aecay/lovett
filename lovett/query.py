@@ -35,18 +35,118 @@ careful attention to parenthesization is needed.
 """
 
 import abc
+import collections.abc
 import re
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import union
 import itertools
 import functools
 from yattag import Doc
+import palettable.colorbrewer.qualitative as Colors
 
 import lovett.util as util
 
-# TODO: document, get better colors, have colors dynamically generated
-_HIGHLIGHT_COLORS = ["red", "blue", "green", "purple", "orange",
-                     "yellow", "brown"]
+
+# Node colorization helpers
+
+
+def _enum(x, idx):
+    """Assign a numeric index to a `QueryFunction`.
+
+    This function is designed for use with `QueryFunction.freduce`.
+
+    Args:
+        x (QueryFunction): The ``QueryFunction`` to operate on
+        idx (int): The next available index
+
+    Returns:
+        int
+
+    """
+    x.idx = idx
+    return idx + 1
+
+
+def _mark_node(match_nodes, node):
+    """A helper function for colorizing tree nodes.
+
+    Reads the ``query_matches`` metadata from a `Tree` node, and adds
+    appropriate ``query_match_colors`` metadata.
+
+    Args:
+        match_nodes (dict): A dictionary mapping values of ``query_matches``
+            to colors those matches should take on.
+        node (Tree): The node to operate on.
+
+    """
+    mn = node.metadata.get("query_matches", ())
+    if len(mn) > 0:
+        node.metadata["query_match_colors"] = list(
+            filter(lambda x: x is not None,
+                   map(lambda x: match_nodes.get(x, None), mn)))
+
+
+def _clear_color(node):
+    """Remove display colorization from a node.
+
+    TODO: does this make more sense in tree.py?
+
+    """
+    if "query_matches" in node.metadata:
+        del node.metadata["query_matches"]
+    if "query_match_colors" in node.metadata:
+        del node.metadata["query_match_colors"]
+
+
+def _colorize_query(x, match_nodes):
+    """Add color attribute to a `QueryFunction`.
+
+    This function is designed to be used with `QueryFunction.freduce`.
+
+    Args:
+        x (QueryFunction): The function to operate on
+        match_nodes (dict): Mapping from numerical query indices to hex colors.
+
+    """
+    if x.idx in match_nodes.keys():
+        x.color = match_nodes[x.idx]
+    return match_nodes
+
+
+def _freduce_result(x):
+    """A helper function for implementing `QueryFunction.freduce`.
+
+    Args:
+        x: any value
+
+    Returns:
+        A sequence
+
+    """
+    if x is None:
+        return ()
+    elif isinstance(x, collections.abc.Sequence):
+        return x
+    else:
+        return(x,)
+
+
+def match_function(fn):
+    """A helper decorator to implement  marking of search matches for HTML output.
+
+    TODO: more about what this does and why it's needed
+
+    All implementations of `QueryFunction.match_tree` should be prapped with
+    this decorator.
+
+    """
+    @functools.wraps(fn)
+    def _match_function(self, tree, mark=False, **kwargs):
+        res = fn(self, tree, mark=mark, **kwargs)
+        if res and mark:
+            tree.metadata.setdefault("query_matches", set()).update((self.idx,))
+        return res
+    return _match_function
 
 
 class QueryFunction(metaclass=abc.ABCMeta):
@@ -58,7 +158,7 @@ class QueryFunction(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def match_tree(self, tree):
+    def match_tree(self, tree, mark=False):
         """Return ``True`` if a tree matches this query.
 
         Args:
@@ -237,10 +337,13 @@ class QueryFunction(metaclass=abc.ABCMeta):
         argument).
 
         """
-        return self._to_html(0)[1]
+        doc, tag, txt = Doc().tagtext()
+        with tag("pre", style="padding: 2px;"):
+            self._to_html(doc, 0)
+        return doc.getvalue()
 
     @abc.abstractmethod
-    def _to_html(self, idx):
+    def _to_html(self, doc, idx):
         """TODO: document.
 
         Returns a tuple new_idx, string.  Newidx is the new index to be used
@@ -249,18 +352,134 @@ class QueryFunction(metaclass=abc.ABCMeta):
         TODO: figure out how to use just one Doc instance, rather than
         creating one per call in the children
 
+        TODO: it's lame to have to put the self.color check in each
+        implementation...can we avoid?
+
         """
         pass
 
+    @property
+    def is_marking(self):
+        """This property returns true if this is a `QueryFunction` that should
+        mark its match in the output.
 
-class And(QueryFunction):
-    """This class implements conjunction of query functions."""
-    def __init__(self, left, right):
+        This is a little subtle.  Simplex queries (that match the node
+        label/text/metadata, and not properties of the node's relatives) are
+        marking.  Wrapping queries are not marking.  The negation of a query
+        is marking if the query being negated is.  A boolean combination (and
+        or or) of two queries is marking if both combined queries are.
+
+        """
+        return False
+
+    @abc.abstractmethod
+    def freduce(self, fn, *args):
+        """This function implements a generic interface for applying a function to all
+        sub-predicates in a query.
+
+        The query is traversed in a post-order fashion, calling ``fn`` at each
+        step.  The first argument to ``fn`` is the `QueryFunction` object
+        itself; the later args are the elements of ``args``.  The return value
+        of ``fn`` becomes the next value of ``args``.
+
+        The return value of ``fn`` must be a `collections.abc.Sequence`; the
+        `_freduce_result` convenience function is provided as a utility to ensure
+        this.
+
+        This is a complicated system, but it enables the result-coloring code
+        to be implemented in a simple fashion.
+
+        .. note:: TODO
+
+            It would be good to figure out whether it's possible to simplify
+            this whole thing somewhat.
+
+        Args:
+            fn (function): The function to call
+            args (Sequence): The arguments to pass
+
+        Returns:
+            The last value of ``fn`` applied to this `QueryFunction`.
+
+        """
+        pass
+
+    def _enumerate(self):
+        """This function assigns a unique numeric id to each sub-element of this
+        `QueryFunction`.
+
+        """
+        self.freduce(_enum, 0)
+
+    @abc.abstractmethod
+    def _get_match_nodes(self):
+        pass
+
+    def colorize_tree(self, tree):
+        self._enumerate()
+        tree.map_nodes(_clear_color)
+        # TODO: do we need to self.freduce(_uncolorize_query) here?
+        tree.map_nodes(lambda node: self.match_tree(node, mark=True))
+        mn = self._get_match_nodes()
+        if len(mn) > 9:
+            raise Exception("Too many match nodes: %s" % len(mn))
+        # As it turns out, Set1 is the same no matter how many colors we have
+        # (up to 9).  For dynamic palettes, more trickery would be needed.
+        palette = Colors.Set1_9.hex_colors
+        match_nodes = dict(map(lambda x: (x[1], palette[x[0]]),
+                               enumerate(mn)))
+        self.freduce(_colorize_query, match_nodes)
+        tree.map_nodes(functools.partial(_mark_node, match_nodes))
+
+    def _try_color(self, doc):
+        try:
+            doc.attr(style="border: 1px solid %s; padding: 2px;" % self.color)
+        except AttributeError:
+            pass
+
+
+class BinaryQueryFunction(QueryFunction):
+    """TODO: document"""
+    def __init__(self, symbol, name, left, right):
+        self._symbol = symbol
+        self._name = name
         self.left = left
         self.right = right
 
-    def match_tree(self, tree):
-        return self.left.match_tree(tree) and self.right.match_tree(tree)
+    def __str__(self):
+        # TODO: we add lots of extra parens to make sure we're getting scoping
+        # rules right...can we cut down on this? perhaps we only need to add
+        # parens for or, but not and
+        return "(" + str(self.left) + " " + self._symbol + " " + \
+            str(self.right) + ")"
+
+    def _to_html(self, doc, idx):
+        doc, tag, txt = doc.tagtext()
+        with tag("span", klass="searchnode searchnode-%s" % self._name):
+            self._try_color(doc)
+            idx = self.left._to_html(doc, idx)
+            txt(" " + self._symbol + " ")
+            idx = self.right._to_html(doc, idx)
+        return idx
+
+    def freduce(self, fn, *args):
+        args = self.left.freduce(fn, *args)
+        args = self.right.freduce(fn, *args)
+        return _freduce_result(fn(self, *args))
+
+    @property
+    def is_marking(self):
+        return self.left.is_marking and self.right.is_marking
+
+
+class And(BinaryQueryFunction):
+    """This class implements conjunction of query functions."""
+    def __init__(self, left, right):
+        super().__init__("&", "and", left, right)
+
+    @match_function
+    def match_tree(self, tree, mark=False):
+        return self.left.match_tree(tree, mark) and self.right.match_tree(tree, mark)
 
     def sql(self, corpus):
         # Other ideas: filter, join
@@ -304,54 +523,39 @@ class And(QueryFunction):
         # gives an incorrect result.
         return select([lc]).select_from(l.join(r, lc == rc))
 
-    def __str__(self):
-        # TODO: we add lots of extra parens to make sure we're getting scoping
-        # rules right...can we cut down on this? perhaps we only need to add
-        # parens for or, but not and
-        return "(" + str(self.left) + " & " + str(self.right) + ")"
-
-    def _to_html(self, idx):
-        idx, left_html = self.left._to_html(idx)
-        idx, right_html = self.right._to_html(idx)
-        doc, tag, txt = Doc().tagtext()
-        with tag("span", klass="searchnode searchnode-and"):
-            doc.asis(left_html)
-            txt(" & ")
-            doc.asis(right_html)
-
-        return idx, doc.getvalue()
+    def _get_match_nodes(self):
+        if self.left.is_marking and self.right.is_marking:
+            # Both halves are marking; so we only mark this node itself as a shortcut
+            return (self.idx,)
+        else:
+            return self.left._get_match_nodes() + self.right._get_match_nodes()
 
 
-class Or(QueryFunction):
+class Or(BinaryQueryFunction):
     """This class implements disjunction of query functions."""
     def __init__(self, left, right):
-        self.left = left
-        self.right = right
+        super().__init__("|", "or", left, right)
 
-    def match_tree(self, tree):
-        res = self.left.match_tree(tree)
-        if res:
-            return res
-        return self.right.match_tree(tree)
+    @match_function
+    def match_tree(self, tree, mark=False):
+        l = self.left.match_tree(tree, mark)
+        if not mark:
+            return l or self.right.match_tree(tree, mark)
+        else:
+            # If we are marking the query, we need to evaluate both branches
+            # for their side-effects
+            r = self.right.match_tree(tree, mark)
+            return l or r
 
     def sql(self, corpus):
         # TODO: needs the same treatemnt that we gave ``And`` replacing
         # intersect with join (but will it work?!?)
         return union(self.left.sql(corpus), self.right.sql(corpus))
 
-    def __str__(self):
-        return "(" + str(self.left) + " | " + str(self.right) + ")"
-
-    def _to_html(self, idx):
-        idx, left_html = self.left._to_html(idx)
-        idx, right_html = self.right._to_html(idx)
-        doc, tag, txt = Doc().tagtext()
-        with tag("span", klass="searchnode searchnode-or"):
-            doc.asis(left_html)
-            txt(" | ")
-            doc.asis(right_html)
-
-        return idx, doc.getvalue()
+    def _get_match_nodes(self):
+        # Mark both halves regardless of whether they are marking, since this
+        # is a disjunction
+        return self.left._get_match_nodes() + self.right._get_match_nodes()
 
 
 class Not(QueryFunction):
@@ -359,11 +563,9 @@ class Not(QueryFunction):
     def __init__(self, fn):
         self.fn = fn
 
-    def match_tree(self, tree):
-        if self.fn.match_tree(tree):
-            return False
-        else:
-            return True
+    @match_function
+    def match_tree(self, tree, mark=False):
+        return not self.fn.match_tree(tree, mark)
 
     def sql(self, corpus):
         return select([corpus.nodes.c.rowid]).where(
@@ -373,14 +575,28 @@ class Not(QueryFunction):
     def __str__(self):
         return "~" + str(self.fn)
 
-    def _to_html(self, idx):
-        idx, html = self.fn._to_html(idx)
-        doc, tag, txt = Doc().tagtext()
+    def _to_html(self, doc, idx):
+        doc, tag, txt = doc.tagtext()
         with tag("span", klass="searchnode searchnode-not"):
+            self._try_color(doc)
             txt("~")
-            doc.asis(html)
+            idx = self.fn._to_html(doc, idx)
 
-        return idx, doc.getvalue()
+        return idx
+
+    def freduce(self, fn, *args):
+        args = self.fn.freduce(fn, *args)
+        return _freduce_result(fn(self, *args))
+
+    @property
+    def is_marking(self):
+        return self.fn.is_marking
+
+    def _get_match_nodes(self):
+        # TODO: what to do about this?  ~dash_tag("FOO") would mark (almost?)
+        # every node in a tree.  One idea is to just pass through, returning
+        # self.fn._get_match_nodes().
+        return ()
 
 
 class WrapperQueryFunction(QueryFunction):
@@ -397,15 +613,18 @@ class WrapperQueryFunction(QueryFunction):
     def __str__(self):
         return "%s(%s)" % (self.name, str(self.query))
 
-    def _to_html(self, idx):
-        idx, html = self.query._to_html(idx)
-        doc, tag, txt = Doc().tagtext()
+    def _to_html(self, doc, idx):
+        doc, tag, txt = doc.tagtext()
         with tag("span", klass="searchnode searchnode-%s" % self.name):
+            self._try_color(doc)
             txt("%s(" % self.name)
-            doc.asis(html)
+            idx = self.query._to_html(doc, idx)
             txt(")")
 
-        return idx, doc.getvalue()
+        return idx
+
+    def _colorize_tree(self, idx, tree):
+        return self.query._colorize_tree(idx, tree)
 
     def sql(self, corpus):
         """TODO: why do we need this?
@@ -417,6 +636,14 @@ class WrapperQueryFunction(QueryFunction):
 
         """
         pass
+
+    def freduce(self, fn, *args):
+        args = self.query.freduce(fn, *args)
+        return _freduce_result(fn(self, *args))
+
+    def _get_match_nodes(self):
+        return self.query._get_match_nodes()
+
 
 class MarkingQueryFunction(abc.ABC, QueryFunction):
     """This class implements common functionality for queries which should mark
@@ -438,23 +665,31 @@ class MarkingQueryFunction(abc.ABC, QueryFunction):
     def __str__(self):
         return "%s(%s)" % (self._name, self._args())
 
-    def _to_html(self, idx):
-        color = _HIGHLIGHT_COLORS[idx]
-        doc, tag, txt = Doc().tagtext()
-        with tag("span",
-                 klass="searchnode searchnode-%s" % self._name,
-                 style="border: 1px solid %s;" % color):
+    def _to_html(self, doc, idx):
+        doc, tag, txt = doc.tagtext()
+        with tag("span", klass="searchnode searchnode-%s" % self._name):
+            self._try_color(doc)
             txt("%s(" % self._name)
             txt(self._args())
             txt(")")
 
-        return idx + 1, doc.getvalue()
+        return idx + 1
+
+    def freduce(self, fn, *args):
+        return _freduce_result(fn(self, *args))
 
     # @abc.abstractmethod
     def mark_tree(t, idx):
         # TODO: implement marking of trees; relies on generating marks in
         # Tree._repr_html_
         pass
+
+    @property
+    def is_marking(self):
+        return True
+
+    def _get_match_nodes(self):
+        return (self.idx,)
 
 
 class idoms(WrapperQueryFunction):
@@ -479,11 +714,12 @@ class idoms(WrapperQueryFunction):
         super().__init__(query)
         self.name = "idoms"
 
-    def match_tree(self, tree):
+    @match_function
+    def match_tree(self, tree, mark=False):
         if util.is_leaf(tree):
             return False
         for daughter in tree:
-            if self.query.match_tree(daughter):
+            if self.query.match_tree(daughter, mark):
                 return True
         return False
 
@@ -511,14 +747,15 @@ class doms(WrapperQueryFunction):
         super().__init__(query)
         self.name = "doms"
 
-    def match_tree(self, tree, _nested=False):
+    @match_function
+    def match_tree(self, tree, mark=False, _nested=False):
         if _nested:
-            if self.query.match_tree(tree):
+            if self.query.match_tree(tree, mark):
                 return True
         if util.is_leaf(tree):
             return False
         for daughter in tree:
-            if self.match_tree(daughter, True):
+            if self.match_tree(daughter, _nested=True, mark=False):
                 return True
         return False
 
@@ -615,7 +852,8 @@ class label(MarkingQueryFunction):
         self.label = label
         self.exact = exact
 
-    def match_tree(self, tree):
+    @match_function
+    def match_tree(self, tree, mark=False):
         if hasattr(self.label, "search"):
             rx = self.label
         else:
@@ -690,14 +928,15 @@ class sprec(WrapperQueryFunction):
         super().__init__(query)
         self.name = "sprec"
 
-    def match_tree(self, tree):
+    @match_function
+    def match_tree(self, tree, mark=False):
         parent = tree.parent
         right_siblings = list(itertools.dropwhile(lambda x: x != tree, parent))
         if len(right_siblings) < 2:
             return False
         # tree itself is included in the list; drop it
         right_siblings = right_siblings[1:]
-        return any(map(self.query.match_tree, right_siblings))
+        return any(map(lambda x: self.query.match_tree(x, mark), right_siblings))
 
     def sql(self, corpus):
         return select([corpus.sprec.c.left]).where(
@@ -717,14 +956,15 @@ class isprec(WrapperQueryFunction):
         super().__init__(query)
         self.name = "isprec"
 
-    def match_tree(self, tree):
+    @match_function
+    def match_tree(self, tree, mark=False):
         parent = tree.parent
         right_siblings = list(itertools.dropwhile(lambda x: x != tree, parent))
         if len(right_siblings) < 2:
             return False
         # get the immediate right sibling
         right_sibling = right_siblings[1]
-        return self.query.match_tree(right_sibling)
+        return self.query.match_tree(right_sibling, mark)
 
     def sql(self, corpus):
         return select([corpus.sprec.c.left]).where(
@@ -750,7 +990,8 @@ class text(MarkingQueryFunction):
     def _args(self):
         return "\"%s\"" % self.text
 
-    def match_tree(self, tree):
+    @match_function
+    def match_tree(self, tree, mark=False):
         return util.is_leaf(tree) and tree.text == self.text
 
     def sql(self, corpus):
