@@ -4,6 +4,7 @@ import abc
 import collections.abc
 import re
 import json
+from yattag import Doc
 
 import lovett.util as util
 
@@ -224,10 +225,18 @@ class Leaf(Tree):
         return self.text
 
     def _repr_html_(self):
-        return """<div class=\"tree-node tree-leaf\">
-                  <span class=\"tree-label\">%s</span>
-                  <span class=\"tree-text\">%s</span>
-                  </div>""" % (self.label, self.text)
+        doc, tag, txt = Doc().tagtext()
+        with tag("div", klass="tree-node tree-leaf"):
+            with tag("span", klass="tree-label"):
+                colors = self.metadata.get("query_match_colors", ())
+                if len(colors) > 0:
+                    doc.attr(style="color: %s;" % colors[0])
+                    if len(colors) > 1:
+                        print("Oops: more than one color for %r" % self)
+                txt(self.label)
+            with tag("span", klass="tree-text"):
+                txt(self.text)
+        return doc.getvalue()
 
     def _to_json_pre(self):
         m = dict(self.metadata)
@@ -328,11 +337,17 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         return "".join([s, leaves, ")"])
 
     def _repr_html_(self):
-        return """<div class=\"tree-node\">
-                  <span class=\"tree-label\">%s</span>
-                  %s
-                  </div>""" % (self.label,
-                               "".join(map(lambda x: x._repr_html_(), self)))
+        doc, tag, txt = Doc().tagtext()
+        with tag("div", klass="tree-node"):
+            with tag("span", klass="tree-label"):
+                colors = self.metadata.get("query_match_colors", ())
+                if len(colors) > 0:
+                    doc.attr(style="color: %s;" % colors[0])
+                    if len(colors) > 1:
+                        print("Oops: more than one color for %r" % self)
+                txt(self.label)
+            doc.asis("".join(map(lambda x: x._repr_html_(), self)))
+        return doc.getvalue()
 
     def _to_json_pre(self):
         return {"label": self.label,
