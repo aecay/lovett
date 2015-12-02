@@ -108,6 +108,7 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
         """Return a `CorpusDb` object containing the trees from the corpus."""
         import lovett.db as db
         d = db.CorpusDb()
+        # TODO: better progress bar...
         p = pyprind.ProgBar(len(self))
         for t in self._trees:
             d.insert_tree(t)
@@ -138,3 +139,8 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
         # query and the root query?)  TODO: figure out if this would actually
         # be an optimization
         pass
+
+
+class ResultSet(CorpusBase):
+    # TODO!!!
+    pass
