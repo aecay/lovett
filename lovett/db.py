@@ -127,6 +127,8 @@ class CorpusDb(corpus.CorpusBase):
 
         """
         for key, val in dic.items():
+            if key in util.INTERNAL_METADATA_KEYS:
+                continue
             if isinstance(val, tree.Metadata):
                 self._insert_metadata(node_id, val, prefix + key + ":")
             else:
