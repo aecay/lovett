@@ -171,6 +171,10 @@ class Tree(metaclass=abc.ABCMeta):
     def id(self):
         return self.root.metadata.id
 
+    @abc.abstractmethod
+    def map_nodes(self, fn):
+        pass
+
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
@@ -230,6 +234,9 @@ class Leaf(Tree):
         m.update({"TEXT": self.text})
         return {"label": self.label,
                 "metadata": m}
+
+    def map_nodes(self, fn):
+        fn(self)
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -331,6 +338,11 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         return {"label": self.label,
                 "metadata": dict(self.metadata),
                 "children": [c._to_json_pre() for c in self]}
+
+    def map_nodes(self, fn):
+        fn(self)
+        for child in self:
+            child.map_nodes(fn)
 
 
 class ParseError(Exception):
