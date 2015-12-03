@@ -6,7 +6,8 @@ import pkg_resources
 
 def ilovett():
     return display(HTML("""<script>$("head").append($("<style type='text/css' />").text('%s'));</script>""" %
-                        open(pkg_resources.resource_filename("lovett", "css/ipython.css")).read().replace("\n","\\n")))
+                        open(pkg_resources.resource_filename("lovett", "css/ipython.css")).read().replace("\n", "\\n") +
+                        "<script>%s</script>" % open(pkg_resources.resource_filename("lovett", "js/widget.js")).read()))
 
 
 # TODO: a widget that allows the editing of a single tree annotald-style in
