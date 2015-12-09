@@ -170,7 +170,25 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
         # be an optimization
         pass
 
+class ResultSet(ListCorpus):
+    """This class wraps a list of results from a query.
 
-class ResultSet(CorpusBase):
-    # TODO!!!
-    pass
+    It arranges for the original query to be displayed in the IPython
+    notebook, and for matching tree nodes to be highlighted.
+
+    """
+    def __init__(self, trees, query, metadata=None):
+        super().__init__(trees, metadata)
+        self._query = query
+
+    def __repr__(self):
+        return "%d results of query \"%s\"" % (len(self._trees), self._query)
+
+    def __str__(self):
+        return repr(self)
+
+    def _ipython_display_(self):
+        if ilovett.injected:
+            widgets.ResultsView(self, self._query)._ipython_display_()
+        else:
+            display(repr(self))
