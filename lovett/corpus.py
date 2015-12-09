@@ -47,8 +47,34 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
 
     """
 
-    # TODO @abc.abstractmethod
+    @abc.abstractmethod
     def matching_trees(query):
+        """Return the trees from this corpus that match a query.
+
+        The query is matched to the trees recursively: if any internal node of
+        the tree matches the query, then the whole tree is returned.
+
+        .. note:: TODO
+
+            Currently this function just returns the root trees containing a
+            match, not the matched subtrees themselves.  The latter
+            functionality might also prove useful...
+
+        Args:
+            query (Query): The query to match.
+
+        Returns:
+            ResultSet: The matching trees.
+
+        """
+        # TODO: use a roots arg to specify a query to bound recursion.  If
+        # we get a structure like (IP (NP ...) (VB ...) (NP ... (CP-REL
+        # (IP-SUB ...)))), a complicated `query`, and roots=Q.label("IP"), we
+        # will only match the query to the (in this case two) nodes that match
+        # the root query, and not test every node in the tree.  TODO:
+        # implement this in the db backend as well (just AND together the
+        # query and the root query?)  TODO: figure out if this would actually
+        # be an optimization
         raise NotImplemented
 
 
@@ -89,6 +115,10 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
 
     def insert(self, i, val):
         self._trees.insert(i, val)
+    def matching_trees(self, query):
+        return ResultSet([t for t in self if t.filter_nodes(query.match_tree)],
+                         query,
+                         metadata=self._metadata)
 
     # Special methods
     def __str__(self):
