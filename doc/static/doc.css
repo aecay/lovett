@@ -1,5 +1,7 @@
 @import "../_static/alabaster.css";
 
+/* Fix ugly overhanging left margins */
+
 dd div.admonition {
     margin-left: 0px !important;
     padding-left: 30px !important;
@@ -8,4 +10,10 @@ dd div.admonition {
 dl dl pre {
     margin-left:  0px !important;
     padding-left: 30px !important;
+}
+
+/* Fix too-big subscripts */
+
+sub {
+    font-size: 65%;
 }

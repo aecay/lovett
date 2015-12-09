@@ -6,6 +6,259 @@
 # section on query optimization?
 
 
-* Foobar
+* Background
 
-needs to be written
+As explained in Lovett’s [[id:bf9b2d94-306c-4537-8d44-b80927bd0356][development philosophy]], the approach taken is to minimize the amount of general-purpose functions that this code base implements, preferring to use standard solutions.
+To that end, Lovett uses a SQL database to store and index its database corpora.
+Specifically, Lovett uses [[https://www.sqlite.org/][SQLite]] because it can be embedded in a program rather than requiring communication with a separate server.
+Its performance has also been heavily optimized.
+
+Rather than constructing compound SQL queries out of strings, Lovett uses the [[http://www.sqlalchemy.org/][SQLAlchemy]] python library, which allows queries to be constructed incrementally using python syntax.[fn:71f260cf]
+This approach is less flexible than directly constructing SQL queries, but it has at least two adavantages:
+1. The combinatorial possibilities of queries are handled by SQLAlchemy, freeing Lovett from worries inherent in manually building large queries (ensuring the uniqueness of internal identifiers, maintaining proper mapping of positional substitutions, ...)
+2. Many details of SQL syntax and semantics are hidden behind a python interface.
+
+[fn:71f260cf] More specifically, Lovett uses only SQLAlchemy’s “core” API for directly constructing queries.
+SQLAlchemy also includes an ORM faculity, which proxies between the attributes of Python objects and database values.
+This extra layer of indirection is not used by Lovett, in order to maintain a greater level of flexibility as well as to avoid the idiosyncratic aspects of ORM code.
+
+* Relational strategy
+
+The observation underlying Lovett’s database corpora is that there are two relations, in the mathematical/logical sense, underlying the majority of structural treebank queries.
+These are *dominance* and *sisterwise-precedence*.[fn:b9c518f9]
+These two relations, on their own, encode all the structural information in a treebank annotation.
+We can define two “flavors” of these relationships.
+The first is an *irreflexive* relationship, which most closely matches the plain-language usage of the terms “dominates” and “sprecedes” (for “sisterwise-precedes”).
+In a structure like the following, we would naturally say that A dominates B and B precedes C:
+
+#+begin_example
+    A
+   / \
+  /   \
+ B     C
+#+end_example
+
+On the other hand, it would be odd to say that A dominates (or precedes) itself.
+However, the *reflexive* version of these relationships, where A dominates A (in addition to B and C) is useful for some purposes.
+Thus, we will recognize the dominates_R and sprecedes_R relationships, where the “R” stands for “reflexive.”
+
+[fn:b9c518f9] I’m particularly indebted to a technical demo by Anton Karl Ingason at DiGS 17 in Reykjavik for pointing out the importance of specifically sisterwise precedence.
+
+
+Experience with CorpusSearch shows that researchers make heavy use of the ~idoms~ and ~iprecedes~ search functions, thus we also need to define analogous *immediate* variants of the sprecedence and dominance relationships.
+X sprecedes_I Y iff X sprecedes Y and there exists no Z such that X sprecedes Z and Z sprecedes Y.
+dominates_I is defined in the same way, /mutatis mutandis/.
+
+Having defined these relationships, we can also define an important subsidiary concept: linear precedence (or lprecedence).  Imagine a structure like the following, corresponding to the phrase “a friend of Bob’s”:
+
+#+begin_example
+      DP
+     / \
+    /   \
+   D     NP
+   |    /  \
+   a   /    \
+       N    PP
+       |    | \
+    friend  |  \
+            P  NPR$
+            |   |
+           of  Bob's
+#+end_example
+
+We would naturally say that the “a” precedes “of”, but this fact is not captured by the sprecedes relationship (in either the reflexive or irreflexive flavor).
+We can define a lprecedence relationship in terms of dominance and precedence:
+
+X lprecedes Y iff for some Z and W all of the following hold:
+- Z dominates_R X
+- Z sprecedes W
+- W dominates_R Y
+
+In the example given above, with X=a and Y=of, then Z=D and W=NP.
+Our lprecedence relationship (as in CorpusSearch for the ~precedes~ search function) is defined for all nodes in the tree, not just terminals.
+We should thus capture the fact that P lprecedes NPR\dollar{}.
+Indeed, for the algorithm given above with X=P and Y=NPR\dollar{}, Z=P and W=NPR\dollar{}.
+This illustrates the importance of using reflexive dominance.
+
+We could just as well define sprecedence in terms of lprecedence and (immediate) dominance.
+X sprecedes Y iff for some Z:
+- Z dominates_I X
+- Z dominates_I Y
+- X lprecedes Y
+However, experience with CorpusSearch shows that sprecedence is very commonly queried.
+This is a direct result of the annotation convention in the PPCHE which places most major constituents as daughters of a clausal =IP= node, and generally prefers flat structures rather than strict binary branching.
+Thus, many “interesting” questions (at least in Germanic historical syntax) involve nodes which are sisters: the relative order of subject, verb, and object (in OV \to VO and loss of V2), Jespersen’s Cycle (where =NEG= and negative =ADVP= nodes are sisters to the verb), etc.
+Thus Lovett chooses to give sprecedence primacy, which allows it to be [[id:103b287c-5939-4ce2-ae06-f09944bb3544][directly indexed]].
+
+** Other relationships
+
+*************** TODO This section is very speculative
+*************** END
+
+CorpusSearch allows searching for one other kind of relationship: coindexation.
+Whereas sprecedence and dominance are both partial orderings, coindexation is an equivalence relationship.
+At this point, Lovett does not allow searching for coindexation.
+It’s not completely clear to me how to implement same-index searching in Lovett’s search language.
+In CorpusSearch, one writes:
+
+#+begin_example
+CP* idoms WNP* AND
+CP* idoms IP* AND
+IP* idoms NP-OB1 AND
+NP-OB1 sameindex WNP*
+#+end_example
+
+Same-instance ensures that these nodes are structurally related.
+Since Lovett lacks same-index, this strategy won’t work.
+One possible translation might be:
+#+begin_example
+label("CP") & idoms(sameIndex(
+    label("WNP"),
+    label("IP") & idoms("NP-OB1")
+))
+#+end_example
+Here though we want to match the label of the =NP-OB1=, not the =IP=, so the query doesn’t work as written.
+We could use a modification of the index strategy envisioned for revision queries (not yet described in this documentation):
+
+*************** TODO link                                          :noexport:
+*************** END
+
+#+begin_src python
+label("CP") &
+idoms(label[1]("WNP")) &
+idoms(label("IP") & idoms(label[2]("NP-OB1"))) &
+sameIndex(1, 2)
+#+end_src
+
+However, we probably wouldn’t implement ~sameIndex~ in the same way as the other predicates.
+It might be a post-filter on the results of a query, suggesting a format like:
+#+begin_src python
+sameIndex(
+   label("CP") &
+   idoms(label[1]("WNP")) &
+   idoms(label("IP") & idoms(label[1]("NP-OB1")))
+)
+#+end_src
+Where the identity of the bracketed indices enforces the identity of index.
+Finally (and this is the idea I like best) we could rely on annotators to do (most of) the structural verification that is needed.
+We could write queries in a much different way:
+#+begin_src python
+label("CP") & idoms(label("WNP") & hasTrace(label("NP-OB1")))
+#+end_src
+We actually don’t need to worry about traces showing up in strange, structurally unconnected places.
+The only worry would be the inability to distinguish between successive cyclic movement:
+
+#+begin_example
+(CP (WNP-X ...)
+    (C 0)
+    (IP (NP *T*-1)
+        (VB ...)
+        (CP (C 0)
+            (IP (NP *T*-2)
+                (...)))))
+#+end_example
+
+* Database representation
+
+Lovett builds four database tables to represent the relational information discussed in the previous section.
+We’ll examine these using a familiar example structure:
+#+begin_example
+      DP
+     / \
+    /   \
+   D     NP
+   |    /  \
+   a   /    \
+       N    PP
+       |    | \
+    friend  |  \
+            P  NPR$
+            |   |
+           of  Bob's
+#+end_example
+The first table Lovett maintains is a table of nodes.
+It associates each node’s label with a unique numeric ID:
+
+| label | ID |
+|-------+----|
+| DP    | 1  |
+| D     | 2  |
+| NP    | 3  |
+| N     | 4  |
+| PP    | 5  |
+| P     | 6  |
+| NPR$  | 7  |
+
+The text nodes are not given independent entries: rather, the text is stored as a metadata item on the immediate parent (the “leaf node”).
+Two tables encode the sprecedence_R and dominance_R relationships:
+
+| parent | child | depth |
+|--------+-------+-------|
+|      1 |     1 |     0 |
+|      2 |     2 |     0 |
+|      1 |     2 |     1 |
+|      3 |     3 |     0 |
+|      1 |     3 |     1 |
+|      4 |     4 |     0 |
+|      3 |     4 |     1 |
+|    *1* |   *4* |   *2* |
+|    ... |   ... |   ... |
+|      7 |     7 |     0 |
+|      5 |     7 |     1 |
+|      3 |     7 |     2 |
+|      1 |     7 |     3 |
+
+The above table gives the sprecedence_R relationship.
+The first row of the table (and generally all rows with depth 0) are the reflexive component of the relationship.
+Non-zero depths encode the ancestors of a node.
+For example the row marked in bold indicates that node 1 (DP) is an ancestor of node 4 (N), and that one (i.e. depth - 1) intermediate node intervenes on the path between the two.
+An example of the sprecedence_R table follows.
+Because nodes in this example have maximally one sister, it simpler than the dominance_R table:
+
+| left | right | distance |
+|------+-------+----------|
+| 1    | 1     | 0        |
+| 2    | 2     | 0        |
+| 2    | 3     | 1        |
+| 4    | 4     | 0        |
+| 4    | 5     | 1        |
+| ...  | ...   | ...      |
+
+Finally, a table encodes the metadata of each node:
+
+| id | key  | value  |
+|----+------+--------|
+|  2 | text | a      |
+|  4 | text | friend |
+|  6 | text | of     |
+|  7 | text | Bob's  |
+
+In this example, the only metadata is the tree text, but other information (coindexation, lemmata, etc.) could also be added to trees.
+
+** Indexing
+:PROPERTIES:
+:ID:       103b287c-5939-4ce2-ae06-f09944bb3544
+:END:
+
+Once the tables have been established in the database, it must be told how to index them.
+This is important for searching performance.
+
+When searching an unindexed column for a particular value, the database must examine all values in that column one by one.
+In other words, the search operation is proportional to the amount of data.
+The database engine can do a more efficient /binary search/ through an indexed column.
+First, it goes to the median entry of the sorted list, and checks whether the searched value is less than or greater than the median.
+It discards the half of the list which is irrelevant, and again finds the middle of the remaining entries.
+The entries are stored in order, so the amount of time to find a particular value is (roughly) proportional to the logarithm (base 2) of the number of entries.
+This takes an amount of time proportional to the logarithm of the number of entries in the column.
+
+There are several consequences of this strategy.
+The first is that regular expression searches are slow, because they are not supported by the indices.
+The second is that string prefix searches are fast (for the same reason that it is easy to find all the people in the phone book whose last names begin with “Sm”).
+
+*************** This suggests an optimization to certain corpus encoding strategies
+In OE for example, we vary commonly have =NEG+VB..= and =RP+VB..= sequences, where the =..= could stand for the empty string or a variety of different indicators of verb tense and mood.
+(=VB= can also vary between several types of verb.)
+It’s fairly common to want to look for the tensed verb in the sentence.
+With the scheme as encoded, this would be inefficient in a database.
+However, changing these tags to =VB&NEG= etc. (using =&= as an arbitrary character to designate “reverse =+=” would make these searches quick.)
+*************** END

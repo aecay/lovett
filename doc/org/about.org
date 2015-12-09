@@ -1,3 +1,11 @@
 #+title: About Lovett
 
 Todo: writeme
+
+* Development philosophy
+:PROPERTIES:
+:ID:       bf9b2d94-306c-4537-8d44-b80927bd0356
+:END:
+
+
+blah blah blah

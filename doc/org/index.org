@@ -30,6 +30,7 @@ It is anticipated that Lovett will interact with the Annotald tool, and efforts 
 
    about
    example-usage
+   querying
    indexing
    api/modules
 #+end_rst

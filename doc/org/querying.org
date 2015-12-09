@@ -1,0 +1,31 @@
+#+title: Lovett’s query language
+
+* Introduction
+
+- need for an abstract representation of queries: compatibility with 2 search engines
+- use of python syntax enabling automation of query building
+  - operator overloading
+
+** Comparison with CorpusSearch
+
+- 2-place predicates vs. builiding of structural queries
+
+* Search functions
+
+** Node-level matches
+
+** Wrappers
+
+** Boolean combinators
+
+* Open questions
+
+** Coindexation
+
+Can’t separately reference the root as in (CS):
+
+IP idoms X AND
+IP idoms Y AND
+X sameindex Y
+
+For cs sameinstance will ensure that X and Y are sisters – but we don’t have a good way to do this.

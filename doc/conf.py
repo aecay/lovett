@@ -6,7 +6,8 @@ extensions = ["sphinx.ext.autodoc",
               # "sphinx.ext.mathjax",
               "sphinx.ext.coverage",
               "sphinx.ext.viewcode",  # Or linkcode -> github?
-              "sphinx.ext.napoleon"]
+              "sphinx.ext.napoleon",
+              "sphinx.ext.pngmath"]
 
 autodoc_default_flags = ["members", "undoc-members", "private-members",
                          "special-members"]
