@@ -415,21 +415,26 @@ class QueryFunction(metaclass=abc.ABCMeta):
     def _get_match_nodes(self):
         pass
 
-    def colorize_tree(self, tree):
+    def colorize(self):
         self._enumerate()
-        tree.map_nodes(_clear_color)
         # TODO: do we need to self.freduce(_uncolorize_query) here?
-        tree.map_nodes(lambda node: self.match_tree(node, mark=True))
         mn = self._get_match_nodes()
         if len(mn) > 9:
             raise Exception("Too many match nodes: %s" % len(mn))
         # As it turns out, Set1 is the same no matter how many colors we have
         # (up to 9).  For dynamic palettes, more trickery would be needed.
         palette = Colors.Set1_9.hex_colors
-        match_nodes = dict(map(lambda x: (x[1], palette[x[0]]),
-                               enumerate(mn)))
-        self.freduce(_colorize_query, match_nodes)
-        tree.map_nodes(functools.partial(_mark_node, match_nodes))
+        color_mapping = dict(map(lambda x: (x[1], palette[x[0]]),
+                                 enumerate(mn)))
+        self.freduce(_colorize_query, color_mapping)
+        return color_mapping
+
+    def colorize_tree(self, tree):
+        # TODO: only do this if we haven't already
+        color_mapping = self.colorize()
+        tree.map_nodes(_clear_color)
+        tree.map_nodes(lambda node: self.match_tree(node, mark=True))
+        tree.map_nodes(functools.partial(_mark_node, color_mapping))
 
     def _try_color(self, doc):
         try:
