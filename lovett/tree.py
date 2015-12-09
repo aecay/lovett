@@ -188,6 +188,10 @@ class Tree(metaclass=abc.ABCMeta):
     def map_nodes(self, fn):
         pass
 
+    @abc.abstractmethod
+    def filter_nodes(self, fn):
+        pass
+
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
@@ -252,6 +256,9 @@ class Leaf(Tree):
 
     def map_nodes(self, fn):
         fn(self)
+
+    def filter_nodes(self, fn):
+        return fn(self)
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -358,6 +365,14 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         fn(self)
         for child in self:
             child.map_nodes(fn)
+
+    def filter_nodes(self, fn):
+        if fn(self):
+            return True
+        for child in self:
+            if child.filter_nodes(fn):
+                return True
+        return False
 
 
 class ParseError(Exception):
