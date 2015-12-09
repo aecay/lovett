@@ -51,8 +51,8 @@ class LabelTest(QueryTest):
         self.assertEqual(str(self.l), "label(\"NP\")")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-label">label("NP")</span></pre>')
 
     def test_query(self):
         tests = (("NP", True),
@@ -81,8 +81,8 @@ class LabelExactTest(QueryTest):
         self.assertEqual(str(self.l), "label(\"NP\", exact=True)")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP", exact=True)</span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-label">label("NP", exact=True)</span></pre>')
 
     def test_query(self):
         tests = (("NP", True),
@@ -103,8 +103,8 @@ class DashTagTest(QueryTest):
         self.assertEqual(str(self.l), "dash_tag(\"FOO\")")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span style="border: 1px solid red;" class="searchnode searchnode-dash_tag">dash_tag("FOO")</span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-dash_tag">dash_tag("FOO")</span></pre>')
 
     def test_query(self):
         tests = (("NP", False),
@@ -127,8 +127,8 @@ class AndTest(QueryTest):
         self.assertEqual(str(self.a), '(label("NP") & dash_tag("FOO"))')
 
     def test_html(self):
-        self.assertXmlEqual(self.a._to_html(0)[1],
-                         '<span class="searchnode searchnode-and"><span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span> &amp; <span style="border: 1px solid blue;" class="searchnode searchnode-dash_tag">dash_tag("FOO")</span></span>')
+        self.assertXmlEqual(self.a._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-dash_tag">dash_tag("FOO")</span>)</span></pre>')
 
     def test_query(self):
         tests = (("(NP-FOO (N bar))", True),
@@ -154,8 +154,8 @@ class OrTest(QueryTest):
         self.assertEqual(str(self.a), '(label("NP") | dash_tag("FOO"))')
 
     def test_html(self):
-        self.assertXmlEqual(self.a._to_html(0)[1],
-                            '<span class="searchnode searchnode-or"><span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span> | <span style="border: 1px solid blue;" class="searchnode searchnode-dash_tag">dash_tag("FOO")</span></span>')
+        self.assertXmlEqual(self.a._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-or">(<span class="searchnode searchnode-label">label("NP")</span> | <span class="searchnode searchnode-dash_tag">dash_tag("FOO")</span>)</span></pre>')
 
     def test_query(self):
         tests = (("(NP-FOO (N bar))", True),
@@ -181,8 +181,8 @@ class NotTest(QueryTest):
         self.assertEqual(str(self.l), "~label(\"NP\")")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span class="searchnode searchnode-not">~<span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span></span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-not">~<span class="searchnode searchnode-label">label("NP")</span></span></pre>')
 
     def test_query(self):
         raise SkipTest          # Known broken
@@ -209,8 +209,8 @@ class DomsTest(QueryTest):
         self.assertEqual(str(self.l), "(label(\"NP\") & doms(label(\"N\")))")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span class="searchnode searchnode-and"><span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-doms">doms(<span style="border: 1px solid blue;" class="searchnode searchnode-label">label("N")</span>)</span></span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-doms">doms(<span class="searchnode searchnode-label">label("N")</span>)</span>)</span></pre>')
 
     def test_doms(self):
         tests = (("(NP (N foo))", True),
@@ -246,10 +246,10 @@ class IDomsTest(QueryTest):
         self.assertEqual(str(self.l_oper), "(label(\"NP\") & idoms(label(\"N\")))")
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span class="searchnode searchnode-and"><span style="border: 1px solid red;" class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-idoms">idoms(<span style="border: 1px solid blue;" class="searchnode searchnode-label">label("N")</span>)</span></span>')
-        self.assertXmlEqual(self.l_oper._to_html(0)[1],
-                            '<span class="searchnode searchnode-and"><span class="searchnode searchnode-label" style="border: 1px solid red;">label("NP")</span> &amp; <span class="searchnode searchnode-idoms">idoms(<span class="searchnode searchnode-label" style="border: 1px solid blue;">label("N")</span>)</span></span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-idoms">idoms(<span class="searchnode searchnode-label">label("N")</span>)</span>)</span></pre>')
+        self.assertXmlEqual(self.l_oper._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("NP")</span> &amp; <span class="searchnode searchnode-idoms">idoms(<span class="searchnode searchnode-label">label("N")</span>)</span>)</span></pre>')
 
     def test_query(self):
         self.do_all(self.l, type(self).idoms_tests)
@@ -295,9 +295,9 @@ def SprecTest(QueryTest):
                          '(label("XP") & (sprec(label("YP")) & sprec(label("ZP"))))')
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1], "")
-        self.assertXmlEqual(self.l_oper._to_html(0)[1], "")
-        self.assertXmlEqual(self.l_oper_tuple._to_html(0)[1], "")
+        self.assertXmlEqual(self.l._repr_html_(), "")
+        self.assertXmlEqual(self.l_oper._repr_html_(), "")
+        self.assertXmlEqual(self.l_oper_tuple._repr_html_(), "")
 
     def test_sprec(self):
         self.do_all(self.l, type(self).sprec_tests)
@@ -324,10 +324,10 @@ class ISprecTest(QueryTest):
         self.assertEqual(str(self.l_oper), '(label("XP") & isprec(label("YP")))')
 
     def test_html(self):
-        self.assertXmlEqual(self.l._to_html(0)[1],
-                            '<span class="searchnode searchnode-and"><span style="border: 1px solid red;" class="searchnode searchnode-label">label("XP")</span> &amp; <span class="searchnode searchnode-isprec">isprec(<span style="border: 1px solid blue;" class="searchnode searchnode-label">label("YP")</span>)</span></span>')
-        self.assertXmlEqual(self.l_oper._to_html(0)[1],
-                            '<span class="searchnode searchnode-and"><span class="searchnode searchnode-label" style="border: 1px solid red;">label("XP")</span> &amp; <span class="searchnode searchnode-isprec">isprec(<span class="searchnode searchnode-label" style="border: 1px solid blue;">label("YP")</span>)</span></span>')
+        self.assertXmlEqual(self.l._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("XP")</span> &amp; <span class="searchnode searchnode-isprec">isprec(<span class="searchnode searchnode-label">label("YP")</span>)</span>)</span></pre>')
+        self.assertXmlEqual(self.l_oper._repr_html_(),
+                            '<pre style="padding: 2px;"><span class="searchnode searchnode-and">(<span class="searchnode searchnode-label">label("XP")</span> &amp; <span class="searchnode searchnode-isprec">isprec(<span class="searchnode searchnode-label">label("YP")</span>)</span>)</span></pre>')
 
     isprec_tests = (("(IP (XP foo) (YP bar))", True, lambda x: x[0]),
                     ("(IP (XP foo) (ZP 123) (YP bar))", False, lambda x: x[0]),
