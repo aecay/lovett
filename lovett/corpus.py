@@ -11,11 +11,12 @@ TODO: write more here
              trees.filter(...)
 
 """
-
+from IPython.display import display, HTML
 import abc
 import collections.abc
 import lovett.tree
-import pyprind
+import lovett.ilovett as ilovett
+import lovett.widgets as widgets
 
 
 class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
@@ -77,23 +78,76 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
         # be an optimization
         raise NotImplemented
 
+    def to_db(self):
+        """Return a `CorpusDb` object containing the trees from the corpus."""
+        import lovett.db as db
+        if isinstance(self, db.CorpusDb):
+            return self
+        db = db.CorpusDb()
+        db.insert_trees(self)
+        return db
 
-class Corpus(CorpusBase, collections.abc.MutableSequence):
-    """A class representing a corpus.
+    def to_corpus(self):
+        """Return a `Corpus` object containing the trees from the corpus."""
+        if isinstance(self, Corpus):
+            return self
+        c = Corpus([], self._metadata)
+        # We do this rather than Corpus(self, metadata) in order to get
+        # properly mutable trees from a database corpus
+        for t in self:
+            c.append(t)
+        return c
 
-    In addition to the sequence semantics inherited from the `CorpusBase`
-    class, this class also implements the `collections.abc.MutableSequence`
-    interface, allowing trees to be added and removed.
+    def write_penn_treebank(self, handle):
+        """Write this corpus in Penn Treebank format to a file handle.
 
-    .. note::
+        Args:
+            handle: an object with a ``write`` method that will handle
+                the I/O for writing the trees
 
-       This is a different issue than whether trees themselves can be changed;
-       the trees are implemented as mutable objects.  The question rather is
-       whether the number and sequence of trees in the corpus can be changed.
+        """
+        for tree in self:
+            handle.write(str(tree))
+            handle.write("\n\n")
+
+    def write_json(self, handle):
+        """Write this corpus in JSON format to a file handle.
+
+        .. note:: TODO
+
+            Document the JSON format, and add a link to that documentation here
+
+        Args:
+            handle: an object with a ``write`` method that will handle
+                the I/O for writing the trees
+
+        """
+        for t in self:
+            handle.write(t.to_json())
+            handle.write("\n")
+
+    def _ipython_display_(self, **kwargs):
+        if ilovett.injected:
+            widgets.TreesView(self)._ipython_display_()
+        else:
+            display(repr(self))
+
+    def __repr__(self):
+        return "<%s of %d trees>" % (type(self), len(self))
+
+    def __str__(self):
+        return repr(self)
+
+
+class ListCorpus(CorpusBase):
+    """This class defines a `CorpusBase` that is backed by a Python list of `Tree` obejcts.
+
+    It exists in order to group common functionality of `Corpus` and
+    `ResultSet` objects.
 
     Args:
-        trees (list of `Tree`): the trees in this corpus.
-        metadata (dict): the corpus metadata.
+        trees (list): List of `Tree` objects.
+        metadata (dict): Metadata for this corpus.
 
     """
     def __init__(self, trees, metadata=None):
@@ -104,71 +158,47 @@ class Corpus(CorpusBase, collections.abc.MutableSequence):
     def __getitem__(self, i):
         return self._trees[i]
 
+    def __len__(self):
+        return len(self._trees)
+
+    def matching_trees(self, query):
+        return ResultSet([t for t in self if t.filter_nodes(query.match_tree)],
+                         query,
+                         metadata=self._metadata)
+
+
+class Corpus(ListCorpus, collections.abc.MutableSequence):
+    """A class representing a (mutable) corpus.
+
+    In addition to the sequence semantics inherited from the `CorpusBase`
+    class, this class also implements the `collections.abc.MutableSequence`
+    interface, allowing trees to be added and removed.
+
+    .. note::
+
+        This is a different issue than whether trees themselves can be changed;
+        the trees are implemented as mutable objects.  The question rather is
+        whether the number and sequence of trees in the corpus can be changed.
+
+    Args:
+        trees (list of `Tree`): The trees in this corpus.
+        metadata (dict): The corpus metadata.
+
+    """
+
+    def __init__(self, trees, metadata=None):
+        super().__init__(trees, metadata)
+
+    # Mutable collection implementation
     def __setitem__(self, i, val):
         self._trees[i] = val
 
     def __delitem__(self, i):
         del self._trees[i]
 
-    def __len__(self):
-        return len(self._trees)
-
     def insert(self, i, val):
         self._trees.insert(i, val)
-    def matching_trees(self, query):
-        return ResultSet([t for t in self if t.filter_nodes(query.match_tree)],
-                         query,
-                         metadata=self._metadata)
 
-    # Special methods
-    def __str__(self):
-        return "<Corpus of %s trees>" % len(self)
-
-    def __repr__(self):
-        # TODO: is this correct?
-        return str(self)
-
-    def _repr_html_(self):
-        # TODO: link the word "Corpus" to the documentation?
-        # TODO: tree viewer, one by one (for first 10 trees)?
-        return """<div class="corpus-repr">A Corpus consisting of %s trees</div>""" % len(self)
-
-    # Instance methods
-    def to_db(self):
-        """Return a `CorpusDb` object containing the trees from the corpus."""
-        import lovett.db as db
-        d = db.CorpusDb()
-        # TODO: better progress bar...
-        p = pyprind.ProgBar(len(self))
-        for t in self._trees:
-            d.insert_tree(t)
-            p.update()
-        return d
-
-    def write_penn_treebank(self, handle):
-        """Write the tree in Penn Historical Corpus format to a file.
-
-        .. note:: TODO
-
-           implement this.
-
-        Args:
-            handle (writable): an object with a ``write`` method where the
-                trees should be written
-
-        """
-        pass
-
-    def matching_trees(self, query, roots=None):
-        # TODO: use the roots arg to specify a query to bound recursion.  If
-        # we get a structure like (IP (NP ...) (VB ...) (NP ... (CP-REL
-        # (IP-SUB ...)))), a complicated `query`, and roots=Q.label("IP"), we
-        # will only match the query to the (in this case two) nodes that match
-        # the root query, and not test every node in the tree.  TODO:
-        # implement this in the db backend as well (just AND together the
-        # query and the root query?)  TODO: figure out if this would actually
-        # be an optimization
-        pass
 
 class ResultSet(ListCorpus):
     """This class wraps a list of results from a query.
