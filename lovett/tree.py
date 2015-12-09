@@ -33,7 +33,10 @@ class Metadata(collections.abc.MutableMapping):
     __slots__ = ("_dict",)
 
     def __init__(self, dic):
-        self._dict = dic
+        if isinstance(dic, Metadata):
+            self._dict = dic._dict
+        else:
+            self._dict = dic
 
     def __getitem__(self, name):
         return self._dict[_check_metadata_name(name)]
