@@ -457,9 +457,11 @@ class BinaryQueryFunction(QueryFunction):
         doc, tag, txt = doc.tagtext()
         with tag("span", klass="searchnode searchnode-%s" % self._name):
             self._try_color(doc)
+            txt("(")
             idx = self.left._to_html(doc, idx)
             txt(" " + self._symbol + " ")
             idx = self.right._to_html(doc, idx)
+            txt(")")
         return idx
 
     def freduce(self, fn, *args):
