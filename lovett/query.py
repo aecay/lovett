@@ -481,7 +481,15 @@ class And(BinaryQueryFunction):
 
     @match_function
     def match_tree(self, tree, mark=False):
-        return self.left.match_tree(tree, mark) and self.right.match_tree(tree, mark)
+        if not mark:
+            return self.left.match_tree(tree, mark) and self.right.match_tree(tree, mark)
+        else:
+            # Kludge: we only want to mark if both branches match
+            result = self.left.match_tree(tree, mark=False) and self.right.match_tree(tree, mark=False)
+            if result:
+                self.left.match_tree(tree, mark=True)
+                self.right.match_tree(tree, mark=True)
+            return result
 
     def sql(self, corpus):
         # Other ideas: filter, join
