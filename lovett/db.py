@@ -70,13 +70,16 @@ class CorpusDb(corpus.CorpusBase):
                              Column("parent", Integer, ForeignKey("nodes.rowid")),
                              Column("child", Integer, ForeignKey("nodes.rowid")),
                              Column("depth", Integer),
-                             Index("child_depth", "child", "depth")
-                             #, Index("parent_idx", "parent")
+                             # Needed for query functions
+                             Index("child_depth", "child", "depth"),
+                             # Needed for reconstitute
+                             Index("parent_depth", "parent", "depth")
             )
             self.sprec = Table("sprec", self.metadata,
                                Column("left", Integer, ForeignKey("nodes.rowid")),
                                Column("right", Integer, ForeignKey("nodes.rowid")),
                                Column("distance", Integer),
+                               # Needed for query functions
                                Index("right_distance", "right", "distance")
                                #, Index("left_idx", "left")
             )
