@@ -395,8 +395,8 @@ class QueryFunction(metaclass=abc.ABCMeta):
             this whole thing somewhat.
 
         Args:
-            fn (function): The function to call
-            args (Sequence): The arguments to pass
+            fn (function): The function to reduce with
+            *args  Remaining arguments to pass to ``fn``
 
         Returns:
             The last value of ``fn`` applied to this `QueryFunction`.
