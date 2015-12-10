@@ -1,0 +1,39 @@
+#+title: Development journal
+
+This document contains explanations of stupid/clever pieces of the code, which don’t need to be documented in comments but still deserve to be memorialized somewhere.
+
+* Boolean operations’ SQL
+
+The first approach to generating SQL for Boolean operations I tried used the ~intersection~ and ~union~ functions that SQLAlchemy provides.
+This gives queries like:
+
+#+begin_example
+SELECT ...
+INTERSECT
+SELECT ...
+#+end_example
+
+These work very nicely: each query returns a set of node IDs (in the sense of the database identifier, not the ID node from the corpus text).
+The relevant Boolean operation just mashes two of these sets together in the indicated way.
+
+There are two issues with this approach.
+The first is that I don’t know how fast it is.
+For the intersection case at least it ought to be equivalent to a JOIN, but I never got to test this because...the second issue is that it doesn’t actually work.
+Specifically, SQLite can’t handle parenthesized intersections of the following type ([[https://www.sqlite.org/lang_select.html][reference]]):
+
+#+begin_example
+SELECT ...
+INTERSECT
+(SELECT ...
+ INTERSECT
+ SELECT ...)
+#+end_example
+
+This precludes the most straightforward way of calculating Boolean operations.
+For ~&~, it is straightforward (if a little tedious) to convert the query into an equivalent join, as is done in @@rst:`lovett.query.And.sql`@@.
+For ~|~ it is a bit more complicated.
+We do some introspection of the lhs and rhs of the operator to see if either of these are also Or nodes, and we fuse them into a single call to @@rst:`sqlalchemy.sql.expression.union`@@.
+This is implemented in @@rst:`lovett.query.Or.sql`@@.
+Note that it’s only because we have converted the ~&~\nothing{}s to JOINs that we can do this – if we converted both types of Boolean operation to set operations, then we would still need parenthesization to get the proper interpretation of a query like =A & (B | C) & D=.
+
+And is a much more common operation than or, so the efficiency of the latter doesn’t matter much.
