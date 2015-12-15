@@ -155,6 +155,7 @@ class ListCorpus(CorpusBase):
         self._metadata = lovett.tree.Metadata(metadata)
 
     # Collection implementation
+    # TODO: make sure that anything which is inserted is actually a Tree.
     def __getitem__(self, i):
         return self._trees[i]
 
