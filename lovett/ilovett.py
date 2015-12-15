@@ -22,7 +22,7 @@ class LovettMagics(Magics):
         return t
 
 
-def ilovett():
+def initialize():
     global injected
     injected = True
     try:
