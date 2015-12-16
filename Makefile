@@ -7,3 +7,6 @@ doc:
 	cp doc/conf.py doc/build
 	cp -r doc/static doc/build
 	sphinx-build -b html doc/build doc/html
+
+test:
+	nosetests --with-coverage --cover-package=lovett --cover-html --cover-branches
