@@ -497,26 +497,12 @@ class And(BinaryQueryFunction):
             return result
 
     def sql(self, corpus):
-        # Other ideas: filter, join
-
-        # Originally we had this code:
-        # return intersect(self.left.sql(corpus), self.right.sql(corpus))
-
-        # The problem with it is that SQLite barfs on parenthesized
-        # intersections like SELECT ... INTERSECT (SELECT ... INTERSECT SELECT
-        # ...).  See https://www.sqlite.org/lang_select.html.
-
-        # One option would be to figure out how to convert And(x, And(y,z))
-        # into intersect(x,y,z) -- but even that might not work if we have
-        # nested And's and Or's.  So evidently we need to convert into a
-        # JOIN.
-
-        # We need an alias here so we get the two subqueries as anon_1 and
+        # We need aliases here so we get the two subqueries as anon_1 and
         # anon_2.  Then our ON clause is "ON anon_1.rowid = anon_2.rowid".  If
-        # we didn't do this, we'd get "ON rowid = rowid", which SQLite doesn't
-        # like very much.
+        # we didn't do this, we could get "ON rowid = rowid", which SQLite
+        # doesn't like.
         l = self.left.sql(corpus).alias()
-        # TODO: this is a really stupid way of getting the right column to
+        # FIXME: this is a really stupid way of getting the right column to
         # join on.
         lc = l.columns.get("id")
         if lc is None:
@@ -535,7 +521,7 @@ class And(BinaryQueryFunction):
             rc = r.columns.get("rowid")
         # Select the left column arbitrarily, since it doesn't matter which we
         # use.  One might think we could use l.join(r).select(lc), but that
-        # gives an incorrect result.
+        # gives an incorrect result, per the SQLAlchemy API.
         return select([lc]).select_from(l.join(r, lc == rc))
 
     def _get_match_nodes(self):
@@ -563,8 +549,21 @@ class Or(BinaryQueryFunction):
             return l or r
 
     def sql(self, corpus):
-        # TODO: needs the same treatemnt that we gave ``And`` replacing
+        # TODO: needs the same treatment that we gave ``And`` replacing
         # intersect with join (but will it work?!?)
+        # Alternative idea:
+        # clauses = []
+        # if instanceof(self.left, Or):
+        #     clauses.append(self.left.left.sql(corpus))
+        #     clauses.append(self.left.right.sql(corpus))
+        # else:
+        #     clauses.append(self.left.sql(corpus))
+        # if instanceof(self.right, Or):
+        #     clauses.append(self.right.left.sql(corpus))
+        #     clauses.append(self.right.right.sql(corpus))
+        # else:
+        #     clauses.append(self.right.sql(corpus))
+        # return union(*clauses)
         return union(self.left.sql(corpus), self.right.sql(corpus))
 
     def _get_match_nodes(self):
