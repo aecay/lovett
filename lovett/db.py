@@ -292,15 +292,8 @@ class CorpusDb(corpus.CorpusBase):
         return len(self.roots)
 
     def matching_trees(self, query):
+        # TODO: return the roots, not the internal nodes
         c = self.engine.connect()
         s = query.sql(self)
         r = list(map(lambda x: x[0], c.execute(s).fetchall()))
-        return CorpusDb(self, r)
-
-    # Instance methods
-    def to_corpus(self):
-        """Convert to a `Corpus`."""
-        c = corpus.Corpus([])
-        for t in self:
-            c.append(t)
-        return c
+        return corpus.ResultSet(CorpusDb(self, r), query)
