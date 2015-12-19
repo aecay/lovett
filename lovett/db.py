@@ -39,7 +39,8 @@ class CorpusDb(corpus.CorpusBase):
 
     .. note:: TODO
 
-       the roots attribute needs more work (is this still true? 12/1/15)
+       the roots attribute needs more work (is this still true? 12/1/15) (yes
+       12/19)
 
     Attributes:
         engine (`sqlalchemy.engine.Engine`): the database engine (*private*)
