@@ -324,8 +324,12 @@ class CorpusDb(corpus.CorpusBase):
         return len(self.roots)
 
     def matching_trees(self, query):
-        # TODO: return the roots, not the internal nodes
         c = self.engine.connect()
         s = query.sql(self)
-        r = list(map(lambda x: x[0], c.execute(s).fetchall()))
+        # TODO: still need to benchmark/examine query plan here to make sure
+        # we don't need another index
+        roots_query = select([self.dom.c.parent]).where(
+            self.dom.c.child.in_(s) &
+            self.dom.c.parent.in_(select([self.roots_db.c.id]))).distinct()
+        r = list(map(lambda x: x[0], c.execute(roots_query).fetchall()))
         return corpus.ResultSet(CorpusDb(self, r), query)
