@@ -138,6 +138,8 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
     def __str__(self):
         return repr(self)
 
+    # TODO: @property def metadata(self): ...
+
 
 class ListCorpus(CorpusBase):
     """This class defines a `CorpusBase` that is backed by a Python list of `Tree` obejcts.
