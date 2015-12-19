@@ -24,7 +24,12 @@ class TreesView(ipywidgets.DOMWidget):
         self.trees = trees
         self.index = 0
         self.maxindex = len(trees) - 1
-        self.begin()
+        if self.maxindex > -1:
+            self.begin()
+        else:
+            # TODO: Never actually gets picked up, because the JS only fires
+            # on property change, not the initial value.
+            self.html = "Empty corpus"
 
     def begin(self):
         self.on_msg(get_tree)
