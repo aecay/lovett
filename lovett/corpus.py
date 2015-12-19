@@ -78,12 +78,12 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
         # be an optimization
         raise NotImplemented
 
-    def to_db(self):
+    def to_db(self, **kwargs):
         """Return a `CorpusDb` object containing the trees from the corpus."""
         import lovett.db as db
         if isinstance(self, db.CorpusDb):
             return self
-        db = db.CorpusDb()
+        db = db.CorpusDb(**kwargs)
         db.insert_trees(self)
         return db
 
