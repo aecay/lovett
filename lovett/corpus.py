@@ -201,16 +201,30 @@ class Corpus(ListCorpus, collections.abc.MutableSequence):
         self._trees.insert(i, val)
 
 
-class ResultSet(ListCorpus):
+class ResultSet(CorpusBase):
     """This class wraps a list of results from a query.
 
     It arranges for the original query to be displayed in the IPython
     notebook, and for matching tree nodes to be highlighted.
 
     """
-    def __init__(self, trees, query, metadata=None):
-        super().__init__(trees, metadata)
+    def __init__(self, backing, query, metadata=None):
+        self._backing = backing
         self._query = query
+
+    def __getitem__(self, i):
+        return self._backing[i]
+
+    def __len__(self):
+        return len(self._backing)
+
+    def matching_trees(self, query):
+        return self._backing.matching_trees(query)
+
+    # TODO
+    # @property
+    # def metadata(self):
+    #     return self._backing.metadata
 
     def __repr__(self):
         return "%d results of query \"%s\"" % (len(self._trees), self._query)
