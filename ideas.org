@@ -181,3 +181,28 @@ the len() of terminals would be zero; we need to enforce that non-terminals have
 * org->ipython notebook exporter
 
 for exporting the usage example to a usable notebook
+
+* Tree diff notes
+
+FastMatch algorithm: http://ilpubs.stanford.edu:8090/115/1/1995-46.pdf
+
+First: compute longest common subsequence on leaf nodes
+Next: Match
+
+
+** Other papers
+
+- Exact algorithms for computing the tree edit distance between unordered trees
+  - http://ac.els-cdn.com/S0304397510005463/1-s2.0-S0304397510005463-main.pdf
+- Alignment of trees - an alternative to tree edit
+  - http://ac.els-cdn.com/0304397595800299/1-s2.0-0304397595800299-main.pdf
+- Comparing similar ordered trees in linear-time
+  - http://ac.els-cdn.com/S1570866706000700/1-s2.0-S1570866706000700-main.pdf
+- A survey on tree edit distance and related problems
+  - http://ac.els-cdn.com/S0304397505000174/1-s2.0-S0304397505000174-main.pdf
+- New Algorithm for Ordered Tree-to-Tree Correction Problem
+  - http://ac.els-cdn.com/S0196677401911708/1-s2.0-S0196677401911708-main.pdf
+- An Optimal Decomposition Algorithm for Tree Edit Distance
+  - http://www.cs.haifa.ac.il/~oren/Publications/TEDinTALG.pdf
+
+https://stackoverflow.com/questions/5894879/detect-differences-between-tree-structures

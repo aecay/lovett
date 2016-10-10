@@ -110,6 +110,7 @@ class Tree(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _repr_html_(self):
+        # TODO: needs to handle INDEX/IDX-TYPE metadata
         pass
 
     def _label_html(self, doc):
@@ -195,6 +196,13 @@ class Tree(metaclass=abc.ABCMeta):
     def filter_nodes(self, fn):
         pass
 
+    @property
+    def word_count(self):
+        count = 0
+        for node in self:
+            count += node.word_count
+        return count
+
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
@@ -262,6 +270,15 @@ class Leaf(Tree):
 
     def filter_nodes(self, fn):
         return fn(self)
+
+    @property
+    def word_count(self):
+        if util.is_silent(self):
+            return 0
+        else:
+            # TODO: split/joined words
+            return 1
+
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -410,6 +427,9 @@ def _postprocess_parsed(l):
                 v = l.pop()
                 if v[0] == 'ID':
                     id = v[1]
+                elif v[0] == "METADATA":
+                    # TODO
+                    pass
                 else:
                     if tree:
                         raise ParseError("Too many children of root node (or label-less node)")

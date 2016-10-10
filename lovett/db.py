@@ -16,12 +16,16 @@ however:
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, MetaData, Index
 from sqlalchemy.sql import select
+import sqlalchemy.event
 import pathlib
-import os
 
 import lovett.util as util
 import lovett.corpus as corpus
 import lovett.tree as tree
+
+
+def _sqlite_pragmas(dbapi_conn, conn_record):
+    dbapi_conn.execute("PRAGMA case_sensitive_like=ON;")
 
 
 class CorpusDb(corpus.CorpusBase):
@@ -71,6 +75,7 @@ class CorpusDb(corpus.CorpusBase):
                 filename = "sqlite:///" + filename
             # Initialize an empty corpus, creating the db from scratch
             self.engine = sqlalchemy.create_engine(filename)
+            sqlalchemy.event.listen(self.engine, "connect", _sqlite_pragmas)
             self.metadata = MetaData()
             self.nodes = Table("nodes", self.metadata,
                                Column("rowid", Integer, primary_key=True),

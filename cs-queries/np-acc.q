@@ -1,5 +1,5 @@
 node: $METAROOT
 
-query: IP* idoms VB[PD] AND
+query: IP* idoms VBP|VBD AND
     IP* idoms NP-ACC* AND
-    VB[PD] precedes NP-ACC*
+    VBP|VBD iprecedes NP-ACC*
