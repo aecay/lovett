@@ -1,6 +1,6 @@
 elpy
-flake8~=2.5
+flake8
 jedi
-nose~=1.3
-Sphinx~=1.3
+nose
+Sphinx
 lxml

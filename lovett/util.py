@@ -139,6 +139,10 @@ def is_nonterminal(t):
     import lovett.tree
     return isinstance(t, lovett.tree.NonTerminal)
 
+
+def is_root(node):
+    return node.parent is None
+
 # def iter_flatten(iterable):
 #     it = iter(iterable)
 #     for e in it:

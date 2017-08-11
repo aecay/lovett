@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 import abc
 import collections.abc
 import re
-import json
 from yattag import Doc
 
 import lovett.util as util
+import lovett.format
 
 
 # TODO: make md5 id for trees missing one
@@ -100,12 +100,15 @@ class Tree(metaclass=abc.ABCMeta):
         return self.metadata == other.metadata and \
             self._label == other._label
 
-    @abc.abstractmethod
     def __str__(self):
-        pass
+        return self.format(lovett.format.Penn)
 
     @abc.abstractmethod
     def __repr__(self):
+        pass
+
+    @abc.abstractmethod
+    def format(self, formatter):
         pass
 
     @abc.abstractmethod
@@ -123,13 +126,6 @@ class Tree(metaclass=abc.ABCMeta):
                 for color in colors[1:]:
                     with tag("span", style="color: %s;" % color):
                         txt("✓")
-
-    @abc.abstractmethod
-    def _to_json_pre(self):
-        pass
-
-    def to_json(self):
-        return json.dumps(self._to_json_pre())
 
     @property
     def label(self):
@@ -188,11 +184,7 @@ class Tree(metaclass=abc.ABCMeta):
         return self.root.metadata.id
 
     @abc.abstractmethod
-    def map_nodes(self, fn):
-        pass
-
-    @abc.abstractmethod
-    def filter_nodes(self, fn):
+    def nodes(self):
         pass
 
 
@@ -211,22 +203,13 @@ class Leaf(Tree):
         super(Leaf, self).__init__(label, metadata)
         self.text = text
 
-    def __str__(self, indent=0):
-        # TODO: handle metadata
-        idxstr = _index_string_for_metadata(self.metadata)
-        text = self.text
-        lemma = self.metadata.lemma
-        if lemma:
-            text += "-" + lemma
-        if util.is_trace(self):
-            return ''.join(['(', self.label, ' ', text, idxstr, ')'])
-        else:
-            return ''.join(['(', self.label, idxstr, ' ', text, ')'])
-
     def __repr__(self):
         return "Leaf('%s', '%s'%s)" % (self.label.replace("'", "\\'"),
                                        self.text.replace("'", "\\'"),
                                        ", metadata=%r" % self.metadata if self.metadata != {} else "")
+
+    def format(self, formatter, indent=0):
+        return "".join((x for x in formatter.leaf(self, indent=indent)))
 
     def __eq__(self, other):
         return super(Leaf, self).__eq__(other) and \
@@ -251,17 +234,8 @@ class Leaf(Tree):
                 txt(self.text)
         return doc.getvalue()
 
-    def _to_json_pre(self):
-        m = dict(self.metadata)
-        m.update({"TEXT": self.text})
-        return {"label": self.label,
-                "metadata": m}
-
-    def map_nodes(self, fn):
-        fn(self)
-
-    def filter_nodes(self, fn):
-        return fn(self)
+    def nodes(self):
+        yield self
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -335,22 +309,8 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                    childstr,
                                    ", metadata=%r" % self.metadata if self.metadata != {} else "")
 
-    def __str__(self, indent=0):
-        # TODO: handle metadata
-        idxstr = _index_string_for_metadata(self.metadata)
-        s = "(%s%s " % (self.label, idxstr)
-        id = self.metadata.id
-        if id is not None:
-            s = "( " + s
-        l = len(s)
-        leaves = list(map(lambda x: x.__str__(indent + l), self))
-        leaves = ("\n" + " " * (indent + l)).join(leaves)
-        if id is not None:
-            if id == ABSENT_ID:
-                leaves += ")"
-            else:
-                leaves += ")\n  (ID %s)" % self.metadata.id
-        return "".join([s, leaves, ")"])
+    def format(self, formatter, indent=0):
+        return "".join((x for x in formatter.tree(self, indent=indent)))
 
     def _repr_html_(self):
         doc, tag, txt = Doc().tagtext()
@@ -359,23 +319,10 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
             doc.asis("".join(map(lambda x: x._repr_html_(), self)))
         return doc.getvalue()
 
-    def _to_json_pre(self):
-        return {"label": self.label,
-                "metadata": dict(self.metadata),
-                "children": [c._to_json_pre() for c in self]}
-
-    def map_nodes(self, fn):
-        fn(self)
+    def nodes(self):
+        yield self
         for child in self:
-            child.map_nodes(fn)
-
-    def filter_nodes(self, fn):
-        if fn(self):
-            return True
-        for child in self:
-            if child.filter_nodes(fn):
-                return True
-        return False
+            yield from child.nodes()
 
 
 class ParseError(Exception):
@@ -484,3 +431,10 @@ def parse(string):
         raise ParseError("unmatched opening bracket: %s" % stack)
 
     return r and _postprocess_parsed(r)
+
+
+def from_json(o):
+    try:
+        return NonTerminal(o.get("label"), (from_json(child) for child in o.get("children")), o.get("metadata", {}))
+    except:
+        return Leaf(o.get("label"), o.get("text"), o.get("metadata", {}))

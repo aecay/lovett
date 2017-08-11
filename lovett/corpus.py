@@ -11,12 +11,15 @@ TODO: write more here
              trees.filter(...)
 
 """
-from IPython.display import display, HTML
+from IPython.display import display
 import abc
 import collections.abc
+import json
+
 import lovett.tree
 import lovett.ilovett as ilovett
 import lovett.widgets as widgets
+import lovett.format
 
 
 class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
@@ -105,12 +108,12 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
             handle: an object with a ``write`` method that will handle
                 the I/O for writing the trees
 
-        """
-        for tree in self:
-            handle.write(str(tree))
-            handle.write("\n\n")
+        TODO: deprecate
 
-    def write_json(self, handle):
+        """
+        handle.write(self.format(lovett.format.Penn))
+
+    def write_json(self, handle):  # TODO: no, we actually want a json list
         """Write this corpus in JSON format to a file handle.
 
         .. note:: TODO
@@ -137,6 +140,9 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
 
     def __str__(self):
         return repr(self)
+
+    def format(self, formatter):
+        return "".join(formatter.corpus(self))
 
 
 class ListCorpus(CorpusBase):
@@ -223,3 +229,17 @@ class ResultSet(ListCorpus):
             widgets.ResultsView(self, self._query)._ipython_display_()
         else:
             display(repr(self))
+
+
+def from_file(fin):
+    trees = [lovett.tree.parse(t) for t in fin.read().split("\n\n") if t != ""]
+    return ListCorpus(trees)
+
+
+def from_json(str):
+    trees = json.loads(str)
+    return from_objects(trees)
+
+
+def from_objects(trees):
+    return ListCorpus([lovett.tree.from_json(tree) for tree in trees])
