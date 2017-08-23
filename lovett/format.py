@@ -82,6 +82,15 @@ class Penn(Bracketed):
         yield from intersperse((cls._do_format_root(tree) for tree in corpus), "\n\n")
 
 
+class Icepahc(Penn):
+    @classmethod
+    def leaf(cls, node, indent=0):
+        r = "".join(super().leaf(node, indent))
+        if "LEMMA" in node.metadata:
+            r = r[:-1] + "-" + node.metadata.lemma + ")"
+        yield r
+
+
 class Deep(Bracketed):
     @classmethod
     def _metadata(cls, metadata, indent):
