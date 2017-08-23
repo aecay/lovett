@@ -124,9 +124,11 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
             handle: an object with a ``write`` method that will handle
                 the I/O for writing the trees
 
+        TODO: deprecate
+
         """
         for t in self:
-            handle.write(t.to_json())
+            handle.write(t.format(lovett.format.Json))
             handle.write("\n")
 
     def _ipython_display_(self, **kwargs):
