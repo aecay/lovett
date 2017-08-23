@@ -348,6 +348,7 @@ def _tokenize(string):
 
 
 def _postprocess_parsed(l):
+    metadata = {}
     if not isinstance(l[0], str):
         # Root node
         tree = None
@@ -357,6 +358,9 @@ def _postprocess_parsed(l):
                 v = l.pop()
                 if v[0] == 'ID':
                     id = v[1]
+                elif v[0] == "METADATA":
+                    for key, val in v[1:]:
+                        metadata[key] = val
                 else:
                     if tree:
                         raise ParseError("Too many children of root node (or label-less node)")
@@ -369,6 +373,8 @@ def _postprocess_parsed(l):
             # TODO: think about the differece between id and fingerprint (for
             # backwards compatibility: fingerprint is the hash-based one,
             # which is better)
+            for key, val in metadata.items():
+                r.metadata[key] = val
             r.metadata.id = id or ABSENT_ID
             return r
         except ParseError as e:
@@ -377,7 +383,6 @@ def _postprocess_parsed(l):
     if len(l) < 2:
         raise ParseError("malformed tree: node has too few children: %s" % l)
     if isinstance(l[1], str):
-        m = {}
         # Simple leaf
         if len(l) != 2:
             raise ParseError("malformed tree: leaf has too many children: %s" % l)
@@ -386,21 +391,20 @@ def _postprocess_parsed(l):
         if util.is_trace_string(l[1]):
             text, idx_type, index = util.label_and_index(text)
             if index is not None:
-                m['INDEX'] = index
-                m['IDX-TYPE'] = idx_type
+                metadata['INDEX'] = index
+                metadata['IDX-TYPE'] = idx_type
         else:
             label, idx_type, index = util.label_and_index(label)
             if index is not None:
-                m['INDEX'] = index
-                m['IDX-TYPE'] = idx_type
-        return Leaf(label, text, m)
+                metadata['INDEX'] = index
+                metadata['IDX-TYPE'] = idx_type
+        return Leaf(label, text, metadata)
     # Regular node
-    m = {}
     label, idx_type, index = util.label_and_index(l[0])
     if index is not None:
-        m['INDEX'] = index
-        m['IDX-TYPE'] = idx_type
-    return NonTerminal(label, map(lambda x: _postprocess_parsed(x), l[1:]), m)
+        metadata['INDEX'] = index
+        metadata['IDX-TYPE'] = idx_type
+    return NonTerminal(label, map(lambda x: _postprocess_parsed(x), l[1:]), metadata)
 
 
 # TODO: better parse errors
