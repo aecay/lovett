@@ -51,6 +51,17 @@ class Bracketed(Format):
     @classmethod
     def _do_format_root(cls, tree):
         yield "( "
+        if set(tree.metadata.keys()) > {"ID"}:
+            yield "(METADATA "
+            first = False
+            for key, val in tree.metadata.items():
+                if key == "ID":
+                    continue
+                if first:
+                    yield "\n" + " " * 12
+                yield "(%s %s)" % (key, val)
+                first = True
+            yield ")\n  "
         yield from cls._do_format(tree, 2)
         if "ID" in tree.metadata:
             yield "\n  (ID %s)" % tree.metadata.id
