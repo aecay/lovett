@@ -1,6 +1,7 @@
 import abc
 import json
 
+import lovett.tree
 import lovett.util
 
 
@@ -21,7 +22,74 @@ def _index_string_for_metadata(metadata):
     return ""
 
 
-# TODO: make these class methods, as the class never needs to be instantiated
+def _postprocess_parsed(l):
+    metadata = {}
+    if not isinstance(l[0], str):
+        # Root node
+        tree = None
+        id = None
+        try:
+            while True:
+                v = l.pop()
+                if v[0] == 'ID':
+                    id = v[1]
+                elif v[0] == "METADATA":
+                    for key, val in v[1:]:
+                        metadata[key] = val
+                else:
+                    if tree:
+                        raise ParseError("Too many children of root node (or label-less node)")
+                    tree = v
+        except IndexError:
+            pass
+        try:
+            r = _postprocess_parsed(tree)
+            # TODO: We should instead insert a hash-based id.
+            # TODO: think about the differece between id and fingerprint (for
+            # backwards compatibility: fingerprint is the hash-based one,
+            # which is better)
+            for key, val in metadata.items():
+                r.metadata[key] = val
+            r.metadata.id = id or "MISSING_ID"
+            return r
+        except ParseError as e:
+            print("error in id: %s" % id)
+            raise e
+    if len(l) < 2:
+        raise ParseError("malformed tree: node has too few children: %s" % l)
+    if isinstance(l[1], str):
+        # Simple leaf
+        if len(l) != 2:
+            raise ParseError("malformed tree: leaf has too many children: %s" % l)
+        label = l[0]
+        text = l[1]
+        if lovett.util.is_trace_string(l[1]):
+            text, idx_type, index = lovett.util.label_and_index(text)
+            if index is not None:
+                metadata['INDEX'] = index
+                metadata['IDX-TYPE'] = idx_type
+        else:
+            label, idx_type, index = lovett.util.label_and_index(label)
+            if index is not None:
+                metadata['INDEX'] = index
+                metadata['IDX-TYPE'] = idx_type
+        return lovett.tree.Leaf(label, text, metadata)
+    # Regular node
+    label, idx_type, index = lovett.util.label_and_index(l[0])
+    if index is not None:
+        metadata['INDEX'] = index
+        metadata['IDX-TYPE'] = idx_type
+    return lovett.tree.NonTerminal(label, map(lambda x: _postprocess_parsed(x), l[1:]), metadata)
+
+
+class ParseError(Exception):
+    pass
+
+
+class ParseEOF(ParseError):
+    pass
+
+
 class Format(abc.ABC):
     @classmethod
     @abc.abstractmethod
@@ -37,6 +105,13 @@ class Format(abc.ABC):
     @abc.abstractmethod
     def corpus(cls, corpus):
         pass
+
+    @classmethod
+    @abc.abstractmethod
+    def read(self, handle):
+        pass
+
+    # TODO: override __init__ to forbid class instantiation
 
 
 class Bracketed(Format):
@@ -67,6 +142,58 @@ class Bracketed(Format):
             yield "\n  (ID %s)" % tree.metadata.id
         yield ")"
 
+    @classmethod
+    def corpus(cls, corpus):
+        yield from intersperse((cls._do_format_root(tree) for tree in corpus), "\n\n")
+
+    @classmethod
+    def _get_token(cls, handle):
+        tok = ""
+        while True:
+            pos = handle.tell()
+            r = handle.read(1)
+            if r == "":
+                raise ParseEOF()
+            elif r in "()":
+                if tok != "":
+                    handle.seek(pos)
+                    return tok
+                else:
+                    return r
+            elif r in " \n\t":
+                if tok != "":
+                    return tok
+                else:
+                    pass  # Keep going
+            else:
+                tok += r
+
+    @classmethod
+    def _postprocess(cls, l):
+        return _postprocess_parsed(l)  # TODO: inline the method here
+
+    # TODO: make configurable, e.g. whether to add ids (sequentially or hash
+    # based), etc.
+    @classmethod
+    def read(cls, handle):
+        stack = []
+        while True:
+            tok = cls._get_token(handle)
+            if tok == "(":
+                stack.append([])
+            elif tok == ")":
+                r = stack.pop()
+                try:
+                    stack[len(stack) - 1].append(r)
+                except IndexError:
+                    # the final closing bracket
+                    return cls._postprocess(r)
+            else:
+                try:
+                    stack[len(stack) - 1].append(tok)
+                except Exception:
+                    raise ParseError("error with stack: %s" % stack)
+
 
 class Penn(Bracketed):
     @classmethod
@@ -88,10 +215,6 @@ class Penn(Bracketed):
         yield from intersperse((cls._do_format(child, newindent) for child in node.children), "\n" + " " * newindent)
         yield ")"
 
-    @classmethod
-    def corpus(cls, corpus):
-        yield from intersperse((cls._do_format_root(tree) for tree in corpus), "\n\n")
-
 
 class Icepahc(Penn):
     @classmethod
@@ -101,34 +224,88 @@ class Icepahc(Penn):
             r = r[:-1] + "-" + node.metadata.lemma + ")"
         yield r
 
+    @classmethod
+    def read(cls, handle):
+        tree = super().read(handle)
+        for node in tree.nodes():
+            if lovett.util.is_leaf(node):
+                parts = node.text.split("-")
+                if len(parts) > 1:
+                    node.metadata.lemma = parts[-1]
+                    node.text = "-".join(parts[:-1])
+        return tree
+
 
 class Deep(Bracketed):
     @classmethod
-    def _metadata(cls, metadata, indent):
-        yield from intersperse(("({key} {value})".format(key=key, value=value) for (key, value) in metadata.items()),
-                               "\n" + " " * (6 + indent))
+    def _metadata_items(cls, dic):
+        items = sorted(dic.items())
+        items = filter(lambda x: x[0] != "ID", items)  # TODO: hack
+        return list(items)
+
+    @classmethod
+    def _print_metadata(cls, node, indent):
+        meta_items = cls._metadata_items(node.metadata)
+        if len(meta_items) > 0:
+            yield "(META "
+            yield from intersperse(("({key} {value})".format(key=key, value=value)
+                                    for (key, value) in meta_items),
+                                   "\n" + " " * (indent + 6))
+            yield ")\n" + " " * indent
 
     @classmethod
     def leaf(cls, node, indent=0):
-        yield "({label} (ORTHO {text})".format(label=node.label, text=node.text)
-        if len(node.metadata) > 0:
-            newindent = (indent + len(node.label) + 2)
-            yield "\n{pad}(META ".format(pad=" " * newindent)
-            yield from cls._metadata(node.metadata, newindent)
-            yield ")"
+        yield "({label} ".format(label=node.label)
+        yield from cls._print_metadata(node, indent + len(node.label) + 2)
+        yield "(ORTHO {text})".format(text=node.text)
         yield ")"
 
     @classmethod
     def tree(cls, node, indent=0):
         yield "(" + node.label + " "
-        newindent = (indent + len(node.label) + 2)
-        if len(node.metadata) > 0:
-            yield "\n{pad}(META ".format(pad=" " * newindent)
-            yield from cls._metadata(node.metadata, newindent)
-            yield ")"
+        newindent = indent + len(node.label) + 2
+        yield from cls._print_metadata(node, newindent)
         yield from intersperse((cls._do_format(child, newindent) for child in node.children),
                                "\n" + " " * newindent)
         yield ")"
+
+    @classmethod
+    def _find_meta_node(cls, children):
+        meta = None
+        rest = []
+        for node in children:
+            if node.label == "META":
+                if meta is None:
+                    meta = node
+                else:
+                    raise Exception("Multiple meta nodes")
+            else:
+                rest.append(node)
+        return meta, rest
+
+    @classmethod
+    def _add_metadata(cls, tree, keys):
+        for node in keys:
+            tree.metadata[node.label] = node.text
+
+    @classmethod
+    def _postprocess_deep(cls, tree):
+        if lovett.util.is_leaf(tree):
+            # Coding node or other degenerate leaf
+            return tree
+        meta, rest = cls._find_meta_node(tree.children)
+        if meta is not None:
+            cls._add_metadata(tree, meta)
+        if len(rest) == 1 and rest[0].label == "ORTHO":
+            l = lovett.tree.Leaf(tree.label, rest[0].text, tree.metadata)
+            return l
+        tree[:] = list(map(cls._postprocess_deep, rest))
+        return tree
+
+    @classmethod
+    def read(cls, handle):
+        tree = super().read(handle)
+        return cls._postprocess_deep(tree)
 
 
 class Json(Format):
