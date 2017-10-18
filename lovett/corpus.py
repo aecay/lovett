@@ -233,8 +233,15 @@ class ResultSet(ListCorpus):
             display(repr(self))
 
 
-def from_file(fin):
-    trees = [lovett.tree.parse(t) for t in fin.read().split("\n\n") if t != ""]
+# TODO: rename to from_handle to better respect the working...or add
+# "from_path" fn for the other case
+def from_file(fin, fmt):
+    trees = []
+    try:
+        while True:
+            trees.append(fmt.read(fin))
+    except lovett.format.ParseEOF:
+        pass
     return ListCorpus(trees)
 
 
