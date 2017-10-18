@@ -30,13 +30,25 @@ def _check_metadata_name(name):
 
 
 class Metadata(collections.abc.MutableMapping):
-    __slots__ = ("_dict",)
+    """A class that wraps a metadata dict of a py:class:`Tree`.
+
+    Objects of this class support both dict-style (``dict['KEY']``) as well as
+    object-style (``dict.key``) lookup.  Key names in the corpus file are all
+    uppercase, with words separated by hyphens.  These names are used as-is in
+    dict-style lookup.  For object-style lookup, the names are translated to
+    lowercase and hyphens are converted to underscores.  Thus both
+    ``metadata['OLD-TAG']`` and ``metadata.old_tag`` refer to the same key.
+
+    """
+    # __slots__ = ("_dict",)
 
     def __init__(self, dic):
-        if isinstance(dic, Metadata):
-            self._dict = dic._dict
+        if dic is None:
+            self._dict = {}
+        elif isinstance(dic, collections.abc.Mapping):
+            self._dict = dict(dic)
         else:
-            self._dict = dic
+            raise ValueError("Metadata must be initialized with a mapping.")
 
     def __getitem__(self, name):
         return self._dict[_check_metadata_name(name)]
@@ -73,7 +85,10 @@ class Metadata(collections.abc.MutableMapping):
 
     def __delattr__(self, name):
         name = _check_metadata_name(name)
-        del self._dict[name]
+        try:
+            del self._dict[name]
+        except KeyError:
+            pass
 
     def __str__(self):
         return str(self._dict)
@@ -83,7 +98,7 @@ class Metadata(collections.abc.MutableMapping):
 
 
 class Tree(metaclass=abc.ABCMeta):
-    __slots__ = ["parent", "metadata", "_label"]
+    #__slots__ = ["parent", "metadata", "_label"]
 
     def __init__(self, label, metadata=None):
         self.parent = None
@@ -197,7 +212,7 @@ def _index_string_for_metadata(metadata):
 
 
 class Leaf(Tree):
-    __slots__ = ["text"]
+    #__slots__ = ["text"]
 
     def __init__(self, label, text, metadata=None):
         super(Leaf, self).__init__(label, metadata)
@@ -239,7 +254,7 @@ class Leaf(Tree):
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
-    __slots__ = ["_children"]
+    #__slots__ = ["_children"]
 
     def __init__(self, label, children, metadata=None):
         super(NonTerminal, self).__init__(label, metadata)
@@ -275,9 +290,18 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
     # For MutableSequence
     def __setitem__(self, index, value):
-        if not isinstance(value, Tree):
-            raise ValueError("Can't place a non-Tree into a Tree: %s" % value)
-        value.parent = self
+        # TODO: remove parent ref on old child(ren)
+        if isinstance(index, int):
+            if not isinstance(value, Tree):
+                raise ValueError("Can't place a non-Tree into a Tree: %s" % value)
+            value.parent = self
+        else:
+            # index is a slice
+            for child in value:
+                if not isinstance(child, Tree):
+                    raise ValueError("Can't place a non-Tree into a Tree: %s" % value)
+                child.parent = self
+
         self._children[index] = value
 
     def __delitem__(self, index):
@@ -300,6 +324,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     @property
     def children(self):
         return self.__iter__()
+    # TODO: setter
 
     # Methods
     def __repr__(self):
