@@ -9,6 +9,7 @@ IDX_REGULAR = "regular"
 #: A list of metadata keys which are used internally by Lovett.  Because these
 #: are all lowercase, there should be no collision with user keys (which must
 #: be uppercase).
+# TODO: prefix with underscores
 INTERNAL_METADATA_KEYS = ["text", "query_matches", "query_match_colors"]
 
 # ### Tree validation
