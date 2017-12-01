@@ -147,22 +147,23 @@ class Bracketed(Format):
         yield from intersperse((cls._do_format_root(tree) for tree in corpus), "\n\n")
 
     @classmethod
-    def _get_token(cls, handle):
+    def _tokens(cls, handle):
         tok = ""
         while True:
-            pos = handle.tell()
             r = handle.read(1)
             if r == "":
                 raise ParseEOF()
             elif r in "()":
                 if tok != "":
-                    handle.seek(pos)
-                    return tok
+                    yield tok
+                    tok = ""
+                    yield r
                 else:
-                    return r
+                    yield r
             elif r in " \n\t":
                 if tok != "":
-                    return tok
+                    yield tok
+                    tok = ""
                 else:
                     pass  # Keep going
             else:
@@ -177,8 +178,7 @@ class Bracketed(Format):
     @classmethod
     def read(cls, handle):
         stack = []
-        while True:
-            tok = cls._get_token(handle)
+        for tok in cls._tokens(handle):
             if tok == "(":
                 stack.append([])
             elif tok == ")":
