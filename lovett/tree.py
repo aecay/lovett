@@ -40,7 +40,7 @@ class Metadata(collections.abc.MutableMapping):
     ``metadata['OLD-TAG']`` and ``metadata.old_tag`` refer to the same key.
 
     """
-    # __slots__ = ("_dict",)
+    __slots__ = ("_dict",)
 
     def __init__(self, dic):
         if dic is None:
@@ -98,7 +98,7 @@ class Metadata(collections.abc.MutableMapping):
 
 
 class Tree(metaclass=abc.ABCMeta):
-    #__slots__ = ["parent", "metadata", "_label"]
+    __slots__ = ["parent", "metadata", "_label"]
 
     def __init__(self, label, metadata=None):
         self.parent = None
@@ -212,7 +212,7 @@ def _index_string_for_metadata(metadata):
 
 
 class Leaf(Tree):
-    #__slots__ = ["text"]
+    __slots__ = ["text"]
 
     def __init__(self, label, text, metadata=None):
         super(Leaf, self).__init__(label, metadata)
@@ -254,7 +254,7 @@ class Leaf(Tree):
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
-    #__slots__ = ["_children"]
+    __slots__ = ["_children"]
 
     def __init__(self, label, children, metadata=None):
         super(NonTerminal, self).__init__(label, metadata)
@@ -462,8 +462,8 @@ def parse(string):
     return r and _postprocess_parsed(r)
 
 
-def from_json(o):
+def from_object(o):
     try:
-        return NonTerminal(o.get("label"), (from_json(child) for child in o.get("children")), o.get("metadata", {}))
+        return NonTerminal(o.get("label"), (from_object(child) for child in o.get("children")), o.get("metadata", {}))
     except:
         return Leaf(o.get("label"), o.get("text"), o.get("metadata", {}))
