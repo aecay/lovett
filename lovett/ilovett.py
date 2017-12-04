@@ -3,7 +3,6 @@
 from IPython.display import display, HTML
 from IPython.core.magic import (Magics, magics_class, cell_magic)
 import pkg_resources
-import lovett.tree as tree
 import keyword
 
 
@@ -16,6 +15,7 @@ class LovettMagics(Magics):
     def tree(self, line, cell):
         # TODO: are we sure we like this method of assigning the tree to a
         # variable?
+        import lovett.tree as tree
         t = tree.parse(cell)
         if line is not None and line.isidentifier() and not keyword.iskeyword(line):
             self.shell.user_ns[line] = t
