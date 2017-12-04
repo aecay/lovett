@@ -123,7 +123,7 @@ class Tree(metaclass=abc.ABCMeta):
         pass
 
     def format(self, formatter):
-        return "".join((x for x in formatter.node(self, indent=indent)))
+        return "".join((x for x in formatter.node(self, indent=0)))
 
     @abc.abstractmethod
     def _repr_html_(self):
