@@ -251,4 +251,4 @@ def from_json(str):
 
 
 def from_objects(trees):
-    return ListCorpus([lovett.tree.from_json(tree) for tree in trees])
+    return lovett.format._Object.read(trees)

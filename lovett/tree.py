@@ -122,9 +122,8 @@ class Tree(metaclass=abc.ABCMeta):
     def __repr__(self):
         pass
 
-    @abc.abstractmethod
     def format(self, formatter):
-        pass
+        return "".join((x for x in formatter.node(self, indent=indent)))
 
     @abc.abstractmethod
     def _repr_html_(self):
@@ -222,9 +221,6 @@ class Leaf(Tree):
         return "Leaf('%s', '%s'%s)" % (self.label.replace("'", "\\'"),
                                        self.text.replace("'", "\\'"),
                                        ", metadata=%r" % self.metadata if self.metadata != {} else "")
-
-    def format(self, formatter, indent=0):
-        return "".join((x for x in formatter.leaf(self, indent=indent)))
 
     def __eq__(self, other):
         return super(Leaf, self).__eq__(other) and \
@@ -333,9 +329,6 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                    self.label,
                                    childstr,
                                    ", metadata=%r" % self.metadata if self.metadata != {} else "")
-
-    def format(self, formatter, indent=0):
-        return "".join((x for x in formatter.tree(self, indent=indent)))
 
     def _repr_html_(self):
         doc, tag, txt = Doc().tagtext()
@@ -463,7 +456,4 @@ def parse(string):
 
 
 def from_object(o):
-    try:
-        return NonTerminal(o.get("label"), (from_object(child) for child in o.get("children")), o.get("metadata", {}))
-    except:
-        return Leaf(o.get("label"), o.get("text"), o.get("metadata", {}))
+    return lovett.format._Object.read(o)

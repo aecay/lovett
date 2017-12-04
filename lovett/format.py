@@ -1,6 +1,8 @@
 import abc
+import collections.abc
 import json
 
+import lovett.corpus
 import lovett.tree
 import lovett.util
 
@@ -92,13 +94,20 @@ class ParseEOF(ParseError):
 
 class Format(abc.ABC):
     @classmethod
+    def node(cls, node, **kwargs):
+        if lovett.util.is_leaf(node):
+            yield from cls._leaf(node, **kwargs)
+        else:
+            yield from cls._tree(node, **kwargs)
+
+    @classmethod
     @abc.abstractmethod
-    def leaf(cls, node, indent=0):
+    def _leaf(cls, node, **kwargs):
         pass
 
     @classmethod
     @abc.abstractmethod
-    def tree(cls, node, indent=0):
+    def _tree(cls, node, **kwargs):
         pass
 
     @classmethod
@@ -115,14 +124,6 @@ class Format(abc.ABC):
 
 
 class Bracketed(Format):
-    # TODO: can move up to Format class
-    @classmethod
-    def _do_format(cls, node, indent):
-        if lovett.util.is_leaf(node):
-            yield from cls.leaf(node, indent)
-        else:
-            yield from cls.tree(node, indent)
-
     @classmethod
     def _do_format_root(cls, tree):
         yield "( "
@@ -137,7 +138,7 @@ class Bracketed(Format):
                 yield "(%s %s)" % (key, val)
                 first = True
             yield ")\n  "
-        yield from cls._do_format(tree, 2)
+        yield from cls.node(tree, indent=2)
         if "ID" in tree.metadata:
             yield "\n  (ID %s)" % tree.metadata.id
         yield ")"
@@ -197,7 +198,7 @@ class Bracketed(Format):
 
 class Penn(Bracketed):
     @classmethod
-    def leaf(cls, node, indent=0):
+    def _leaf(cls, node, indent=0):
         idxstr = _index_string_for_metadata(node.metadata)
         if lovett.util.is_trace(node):
             fmtstr = "({label} {text}{index})"
@@ -208,17 +209,17 @@ class Penn(Bracketed):
                             index=idxstr)
 
     @classmethod
-    def tree(cls, node, indent=0):
+    def _tree(cls, node, indent=0):
         pre = "(" + node.label + _index_string_for_metadata(node.metadata) + " "
         newindent = len(pre) + indent
         yield pre
-        yield from intersperse((cls._do_format(child, newindent) for child in node.children), "\n" + " " * newindent)
+        yield from intersperse((cls.node(child, indent=newindent) for child in node.children), "\n" + " " * newindent)
         yield ")"
 
 
 class Icepahc(Penn):
     @classmethod
-    def leaf(cls, node, indent=0):
+    def _leaf(cls, node, indent=0):
         r = "".join(super().leaf(node, indent))
         if "LEMMA" in node.metadata:
             r = r[:-1] + "-" + node.metadata.lemma + ")"
@@ -254,18 +255,18 @@ class Deep(Bracketed):
             yield ")\n" + " " * indent
 
     @classmethod
-    def leaf(cls, node, indent=0):
+    def _leaf(cls, node, indent=0):
         yield "({label} ".format(label=node.label)
         yield from cls._print_metadata(node, indent + len(node.label) + 2)
         yield "(ORTHO {text})".format(text=node.text)
         yield ")"
 
     @classmethod
-    def tree(cls, node, indent=0):
+    def _tree(cls, node, indent=0):
         yield "(" + node.label + " "
         newindent = indent + len(node.label) + 2
         yield from cls._print_metadata(node, newindent)
-        yield from intersperse((cls._do_format(child, newindent) for child in node.children),
+        yield from intersperse((cls.node(child, indent=newindent) for child in node.children),
                                "\n" + " " * newindent)
         yield ")"
 
@@ -308,17 +309,17 @@ class Deep(Bracketed):
         return cls._postprocess_deep(tree)
 
 
-class Json(Format):
+class _Object(Format):
     @classmethod
-    def _return(cls, obj):
-        yield json.dumps(obj, indent=4)
+    def node(cls, node, **kwargs):
+        if lovett.util.is_leaf(node):
+            return cls._leaf(node, **kwargs)
+        else:
+            return cls._tree(node, **kwargs)
 
     @classmethod
-    def _format(cls, node):
-        if lovett.util.is_leaf(node):
-            return cls._leaf(node)
-        else:
-            return cls._tree(node)
+    def corpus(cls, corpus):
+        return [cls.node(tree) for tree in corpus]
 
     @classmethod
     def _leaf(cls, node):
@@ -328,19 +329,39 @@ class Json(Format):
                 "metadata": m}
 
     @classmethod
-    def leaf(cls, node, _indent=0):
-        yield from cls._return(cls._leaf(node))
-
-    @classmethod
-    def _tree(cls, node, _indent=0):
+    def _tree(cls, node):
         return {"label": node.label,
                 "metadata": dict(node.metadata),
-                "children": [cls._format(c) for c in node.children]}
+                "children": [cls.node(c) for c in node.children]}
 
     @classmethod
-    def tree(cls, node, _indent=0):
-        yield from cls._return(cls._tree(node))
+    def read(cls, obj):
+        if isinstance(obj, collections.abc.Sequence):
+            # A corpus
+            return lovett.corpus.ListCorpus([cls.read(tree) for tree in obj])
+        else:
+            # A single tree
+            try:
+                return lovett.tree.NonTerminal(obj.get("label"),
+                                               (cls.read(child) for child in obj.get("children")),
+                                               obj.get("metadata", {}))
+            except:
+                return lovett.tree.Leaf(obj.get("label"), obj.get("text"), obj.get("metadata", {}))
+
+
+class Json(_Object):
+    @classmethod
+    def _return(cls, obj):
+        yield json.dumps(obj, indent=4)
+
+    @classmethod
+    def leaf(cls, node):
+        yield from cls._return(super().leaf(node))
+
+    @classmethod
+    def tree(cls, node):
+        yield from cls._return(super().tree(node))
 
     @classmethod
     def corpus(cls, corpus):
-        yield from cls._return([cls._format(tree) for tree in corpus])
+        yield from cls._return(super().corpus(tree))
