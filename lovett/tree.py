@@ -201,6 +201,15 @@ class Tree(metaclass=abc.ABCMeta):
     def nodes(self):
         pass
 
+    def has_label(self, label):
+        if isinstance(label, str):
+            return self.label == label or self.label.startswith(label + "-")
+        else:
+            return any((self.has_label(l) for l in label))
+
+    def has_dash_tag(self, tag):
+        return self.label.endswith("-" + tag) or ("-" + tag + "-") in self.label
+
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
