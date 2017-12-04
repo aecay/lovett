@@ -282,3 +282,12 @@ def _metadata_str_to_py(value):
             return int(value)
         except ValueError:
             return value
+
+
+def _is_ich(idx, node):
+    return is_leaf(node) and node.text == "*ICH*" and node.metadata.index == idx
+
+
+def is_extraposed(node):
+    idx = node.metadata.index
+    return idx is not None and any((_is_ich(idx, n) for n in node.root.nodes()))
