@@ -1,5 +1,6 @@
 from functools import reduce
 import re
+import uuid
 
 TRACE_TYPES = ["*T*", "*ICH*", "*CL*", "*"]
 SILENT_TYPES = ["*con*", "*exp*", "*pro*"]
@@ -143,6 +144,10 @@ def is_nonterminal(t):
 
 def is_root(node):
     return node.parent is None
+
+
+def means_leaf(node):
+    return is_text_leaf(node)
 
 # def iter_flatten(iterable):
 #     it = iter(iterable)
@@ -291,3 +296,7 @@ def _is_ich(idx, node):
 def is_extraposed(node):
     idx = node.metadata.index
     return idx is not None and any((_is_ich(idx, n) for n in node.root.nodes()))
+
+
+def fresh_id():
+    return uuid.uuid4().hex
