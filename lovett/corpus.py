@@ -17,8 +17,8 @@ import collections.abc
 import json
 
 import lovett.tree
-import lovett.ilovett as ilovett
-import lovett.widgets as widgets
+import lovett.ilovett
+import lovett.widgets
 import lovett.format
 
 
@@ -132,8 +132,8 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
             handle.write("\n")
 
     def _ipython_display_(self, **kwargs):
-        if ilovett.injected:
-            widgets.TreesView(self)._ipython_display_()
+        if lovett.ilovett.injected:
+            lovett.widgets.TreesView(self)._ipython_display_()
         else:
             display(repr(self))
 
@@ -227,8 +227,8 @@ class ResultSet(ListCorpus):
         return repr(self)
 
     def _ipython_display_(self):
-        if ilovett.injected:
-            widgets.ResultsView(self, self._query)._ipython_display_()
+        if lovett.ilovett.injected:
+            lovett.widgets.ResultsView(self, self._query)._ipython_display_()
         else:
             display(repr(self))
 
