@@ -202,9 +202,11 @@ class Tree(metaclass=abc.ABCMeta):
         pass
 
     def has_label(self, label):
-        if isinstance(label, str):
+        if hasattr(label, "match"):
+            return label.match(self.label) is not None
+        elif isinstance(label, str):
             return self.label == label or self.label.startswith(label + "-")
-        else:
+        else: # TODO: if is iterable, else raise value error
             return any((self.has_label(l) for l in label))
 
     def has_dash_tag(self, tag):
