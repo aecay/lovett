@@ -204,8 +204,11 @@ class Tree(metaclass=abc.ABCMeta):
     def has_label(self, label):
         if isinstance(label, str):
             return self.label == label or self.label.startswith(label + "-")
+        elif isinstance(label, re._pattern_type):
+            return label.match(self.label) is not None
         else:
-            return any((self.has_label(l) for l in label))
+            # Use sorted to linearize a set
+            return any((self.has_label(l) for l in sorted(label)))
 
     def has_dash_tag(self, tag):
         return self.label.endswith("-" + tag) or ("-" + tag + "-") in self.label
@@ -238,7 +241,7 @@ class Leaf(Tree):
     @property
     def urtext(self):
         # TODO: more excluded node types
-        if not util.is_text_leaf(self):
+        if not util.means_leaf(self):
             return ""
         if self.label in [",", "."]:
             # Punctuation: no spaces

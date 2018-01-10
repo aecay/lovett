@@ -1,5 +1,6 @@
 from functools import reduce
 import re
+import uuid
 
 TRACE_TYPES = ["*T*", "*ICH*", "*CL*", "*"]
 SILENT_TYPES = ["*con*", "*exp*", "*pro*"]
@@ -131,7 +132,7 @@ def is_ec(t):
     return is_leaf(t) and (t.text == "0" or is_trace(t) or is_silent(t))
 
 
-def is_text_leaf(t):
+def means_leaf(t):
     return is_leaf(t) and not is_ec(t) and not is_silent(t) and \
         t.label.split("-")[0] not in ("CODE", "CODING")
 
@@ -291,3 +292,7 @@ def _is_ich(idx, node):
 def is_extraposed(node):
     idx = node.metadata.index
     return idx is not None and any((_is_ich(idx, n) for n in node.root.nodes()))
+
+
+def fresh_id():
+    return uuid.uuid4().hex
