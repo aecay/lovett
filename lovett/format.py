@@ -364,4 +364,4 @@ class Json(_Object):
 
     @classmethod
     def corpus(cls, corpus):
-        yield from cls._return(super().corpus(tree))
+        yield from cls._return(super().corpus(corpus))
