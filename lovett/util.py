@@ -132,7 +132,7 @@ def is_ec(t):
     return is_leaf(t) and (t.text == "0" or is_trace(t) or is_silent(t))
 
 
-def is_text_leaf(t):
+def means_leaf(t):
     return is_leaf(t) and not is_ec(t) and not is_silent(t) and \
         t.label.split("-")[0] not in ("CODE", "CODING")
 
