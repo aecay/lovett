@@ -146,9 +146,6 @@ def is_root(node):
     return node.parent is None
 
 
-def means_leaf(node):
-    return is_text_leaf(node)
-
 # def iter_flatten(iterable):
 #     it = iter(iterable)
 #     for e in it:

@@ -31,6 +31,8 @@ def _check_metadata_name(name):
     return name_t
 
 
+# TODO: a simpler way to do this is just to normalize the lemmata on
+# read/change
 class LemmaProxy(str):
     # Modeled on https://stackoverflow.com/a/33272874
     def __repr__(self):
@@ -246,8 +248,7 @@ class Tree(metaclass=abc.ABCMeta):
         elif isinstance(label, re._pattern_type):
             return label.match(self.label) is not None
         else:
-            # Use sorted to linearize a set
-            return any((self.has_label(l) for l in sorted(label)))
+            return any((self.has_label(l) for l in list(label)))
 
     def has_dash_tag(self, tag):
         return self.label.endswith("-" + tag) or ("-" + tag + "-") in self.label
