@@ -22,6 +22,20 @@ import lovett.widgets
 import lovett.format
 
 
+# class CorpusInfoMeta(type):
+#     def __new__(cls, classname, bases, classdict):
+#         for k in classdict.keys():
+#             if k.startswith("__"):
+#                 pass
+#             if k not in {"annotation_tags"}:
+#                 raise ValueError("Unknown member %s in CorpusInfo" % k)
+#         super().__new__(classname, bases, classdict)
+
+
+# class CorpusInfo(metaclass=CorpusInfoMeta):
+#     pass
+
+
 class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
     """A base class for corpora.
 
