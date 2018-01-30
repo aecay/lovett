@@ -13,13 +13,15 @@ Currently includes:
 
 """
 
+from io import StringIO
+
 import requests
 from github.MainClass import Github
 import abc
 import os.path
 
+import lovett.format as format
 import lovett.corpus as corpus
-import lovett.tree as tree
 
 # TODO: new classes in the hierarchy: CachingLoader, MutableLoader
 # The latter should implement a with: method to iterate through and modify its
@@ -45,6 +47,10 @@ class Loader(object):
          it's too much hassle.
 
     """
+
+    def __init__(self, format=format.Penn):
+        self._format = format
+
     @abc.abstractmethod
     def file(self, filename):
         """Return the content of one of the files from a corpus.
@@ -96,11 +102,15 @@ class Loader(object):
             files = (files,)
         for file in files or self.files():
             contents = self.file(file)
-            for tree_string in contents.split("\n\n"):
-                tree_obj = tree.parse(tree_string)
-                if tree_obj is not None:
-                    tree_obj.metadata.file = file
-                    c.append(tree_obj)
+            fin = StringIO(contents)
+            try:
+                while True:
+                    tree = self._format.read(fin)
+                    tree.metadata.file = file
+                    c.append(tree)
+            except format.ParseEOF:  # TODO: potentially bogus if errors encountered?
+                pass
+
         return c
 
 
@@ -213,3 +223,20 @@ class FileLoader(Loader):
                 if filename.endswith(self._extension):
                     files.append(filename)
         return files
+
+
+class ListLoader(Loader):
+    """TODO"""
+
+    def __init__(self, files, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._files = list(files)
+
+    def file(self, filename):
+        if filename not in self._files:
+            raise ValueError("File is not part of the corpus")
+        with open(filename) as fin:
+            return fin.read()
+
+    def files(self):
+        return list(self._files)
