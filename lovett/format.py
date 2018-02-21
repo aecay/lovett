@@ -141,12 +141,13 @@ class Bracketed(Format):
         #         yield "(%s %s)" % (key, val)
         #         first = True
         #     yield ")\n  "
+        id_ = None
         if "ID" in tree.metadata:
             id_ = tree.metadata.id
             del tree.metadata["ID"]
         yield from cls.node(tree, indent=2)
         if id_ is not None:
-            yield "\n  (ID %s)" % id
+            yield "\n  (ID %s)" % id_
         yield ")"
 
     @classmethod
