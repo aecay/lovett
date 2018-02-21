@@ -11,9 +11,6 @@ import lovett.util as util
 import lovett.format
 
 
-# TODO: make md5 id for trees missing one
-ABSENT_ID = "LOVETT_MISSING_ID"
-
 # TODO: need read-only attribute for trees, from indexed corpora
 
 
@@ -371,7 +368,11 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     # Properties
     @property
     def children(self):
-        return self.__iter__()
+        # TODO: this is quite weird!  But we want to maintain the safety
+        # checks and the parent property setting etc.  The alternative is to
+        # segregate this stuff into a separate class which is returned from
+        # here, and not have the tree class itself be a sequence
+        return self
     # TODO: setter
 
     # Methods
@@ -393,118 +394,6 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
         yield self
         for child in self:
             yield from child.nodes()
-
-
-class ParseError(Exception):
-    pass
-
-
-def _tokenize(string):
-    # TODO: corpussearch comments
-    tok = ''
-    for char in string:
-        if char == '(' or char == ')':
-            if tok != '':
-                yield tok
-                tok = ''
-            yield char
-        elif char in ' \n\t':
-            if tok != '':
-                yield tok
-                tok = ''
-            continue
-        else:
-            tok += char
-
-
-def _postprocess_parsed(l):
-    metadata = {}
-    if not isinstance(l[0], str):
-        # Root node
-        tree = None
-        id = None
-        try:
-            while True:
-                v = l.pop()
-                if v[0] == 'ID':
-                    id = v[1]
-                elif v[0] == "METADATA":
-                    for key, val in v[1:]:
-                        metadata[key] = val
-                else:
-                    if tree:
-                        raise ParseError("Too many children of root node (or label-less node)")
-                    tree = v
-        except IndexError:
-            pass
-        try:
-            r = _postprocess_parsed(tree)
-            # TODO: We should instead insert a hash-based id.
-            # TODO: think about the differece between id and fingerprint (for
-            # backwards compatibility: fingerprint is the hash-based one,
-            # which is better)
-            for key, val in metadata.items():
-                r.metadata[key] = val
-            r.metadata.id = id or ABSENT_ID
-            return r
-        except ParseError as e:
-            print("error in id: %s" % id)
-            raise e
-    if len(l) < 2:
-        raise ParseError("malformed tree: node has too few children: %s" % l)
-    if isinstance(l[1], str):
-        # Simple leaf
-        if len(l) != 2:
-            raise ParseError("malformed tree: leaf has too many children: %s" % l)
-        label = l[0]
-        text = l[1]
-        if util.is_trace_string(l[1]):
-            text, idx_type, index = util.label_and_index(text)
-            if index is not None:
-                metadata['INDEX'] = index
-                metadata['IDX-TYPE'] = idx_type
-        else:
-            label, idx_type, index = util.label_and_index(label)
-            if index is not None:
-                metadata['INDEX'] = index
-                metadata['IDX-TYPE'] = idx_type
-        return Leaf(label, text, metadata)
-    # Regular node
-    label, idx_type, index = util.label_and_index(l[0])
-    if index is not None:
-        metadata['INDEX'] = index
-        metadata['IDX-TYPE'] = idx_type
-    return NonTerminal(label, map(lambda x: _postprocess_parsed(x), l[1:]), metadata)
-
-
-# TODO: better parse errors
-def parse(string):
-    stack = []
-    stream = _tokenize(string)
-    r = None
-    for token in stream:
-        if token == '(':
-            stack.append([])
-        elif token == ')':
-            r = stack.pop()
-            try:
-                stack[len(stack) - 1].append(r)
-            except IndexError:
-                # the final closing bracket
-                break
-        else:
-            try:
-                stack[len(stack) - 1].append(token)
-            except Exception:
-                raise ParseError("error with stack: %s; string = %s" % (stack, string))
-
-    n = next(stream, None)
-    if n is not None:
-        raise ParseError("unmatched closing bracket: %s" % r)
-    if not len(stack) == 0:
-        raise ParseError("unmatched opening bracket: %s" % stack)
-
-    return r and _postprocess_parsed(r)
 
 
 def from_object(o):
