@@ -258,7 +258,10 @@ class Tree(metaclass=abc.ABCMeta):
     def nodes(self):
         pass
 
-    def has_label(self, label):
+    def has_label(self, *args):
+        if len(args) > 1:
+            return self.has_label(args)
+        label = args[0]
         if isinstance(label, str):
             return self.label == label or self.label.startswith(label + "-")
         elif isinstance(label, re._pattern_type):
