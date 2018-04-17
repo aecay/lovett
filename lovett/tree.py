@@ -207,11 +207,30 @@ class Tree(metaclass=abc.ABCMeta):
         return None
 
     @property
+    def left_siblings(self):
+        parent_index = self._parent_index
+        if self.parent and parent_index > 0:
+            return self.parent[0:parent_index]
+        # TODO: Is this the right thing?  We don't distinguish between the
+        # root node and a left-most daughter; both are represented by an empty
+        # sequence.  OTOH, if we return None for the root node (as we do in
+        # the singular left_sibling case), callers constantly must test our
+        # return value for None-ness
+        return ()
+
+    @property
     def right_sibling(self):
         parent_index = self._parent_index
         if self.parent and parent_index < len(self.parent) - 1:
             return self.parent[parent_index + 1]
         return None
+
+    @property
+    def right_siblings(self):
+        parent_index = self._parent_index
+        if self.parent and parent_index < len(self.parent) - 1:
+            return self.parent[parent_index + 1:]
+        return ()
 
     @property
     def root(self):
