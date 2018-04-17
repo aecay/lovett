@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import abc
 import collections.abc
+import io
 import re
 import unicodedata
 
@@ -420,3 +421,8 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
 def from_object(o):
     return lovett.format._Object.read(o)
+
+
+def parse(str, format=lovett.format.Penn):
+    handle = io.StringIO(str)
+    return format.read(handle)
