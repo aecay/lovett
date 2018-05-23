@@ -15,6 +15,7 @@ from IPython.display import display
 import abc
 import collections.abc
 import json
+from io import StringIO
 
 import lovett.tree
 import lovett.ilovett
@@ -250,10 +251,15 @@ class ResultSet(ListCorpus):
 # TODO: rename to from_handle to better respect the working...or add
 # "from_path" fn for the other case
 def from_file(fin, fmt):
+    if hasattr(fin, "read"):
+        text = fin.read()
+    else:
+        text = fin
+    handle = StringIO(text)
     trees = []
     try:
         while True:
-            trees.append(fmt.read(fin))
+            trees.append(fmt.read(handle))
     except lovett.format.ParseEOF:
         pass
     return ListCorpus(trees)
