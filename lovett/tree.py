@@ -137,11 +137,11 @@ class Metadata(collections.abc.MutableMapping):
 
 
 class Tree(metaclass=abc.ABCMeta):
-    __slots__ = ["parent", "metadata", "_label"]
+    __slots__ = ["parent", "_metadata", "_label"]
 
     def __init__(self, label, metadata=None):
         self.parent = None
-        self.metadata = Metadata(metadata or {})
+        self._metadata = Metadata(metadata or {})
         label, idxtype, idx = util.label_and_index(label)
         self._label = label
         if idx is not None:
@@ -272,6 +272,14 @@ class Tree(metaclass=abc.ABCMeta):
 
     def has_dash_tag(self, tag):
         return self.label.endswith("-" + tag) or ("-" + tag + "-") in self.label
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, new_meta):
+        self.metadata = Metadata(new_meta)
 
 
 def _index_string_for_metadata(metadata):
