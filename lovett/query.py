@@ -419,13 +419,12 @@ class QueryFunction(metaclass=abc.ABCMeta):
         self._enumerate()
         # TODO: do we need to self.freduce(_uncolorize_query) here?
         mn = self._get_match_nodes()
-        if len(mn) > 9:
-            raise Exception("Too many match nodes: %s" % len(mn))
+        # if len(mn) > 9:
+        #     raise Exception("Too many match nodes: %s" % len(mn))
         # As it turns out, Set1 is the same no matter how many colors we have
         # (up to 9).  For dynamic palettes, more trickery would be needed.
-        palette = Colors.Set1_9.hex_colors
-        color_mapping = dict(map(lambda x: (x[1], palette[x[0]]),
-                                 enumerate(mn)))
+        palette = itertools.cycle(Colors.Set1_9.hex_colors)
+        color_mapping = dict(map(lambda x: (x, next(palette)), mn))
         self.freduce(_colorize_query, color_mapping)
         return color_mapping
 
@@ -945,13 +944,15 @@ class sprec(WrapperQueryFunction):
 
     @match_function
     def match_tree(self, tree, mark=False):
-        parent = tree.parent
-        right_siblings = list(itertools.dropwhile(lambda x: x != tree, parent))
-        if len(right_siblings) < 2:
+        if tree.parent is not None:
+            right_siblings = tree.right_siblings
+            if len(right_siblings) < 2:
+                return False
+            # tree itself is included in the list; drop it
+            right_siblings = right_siblings[1:]
+            return any(map(lambda x: self.query.match_tree(x, mark), right_siblings))
+        else:
             return False
-        # tree itself is included in the list; drop it
-        right_siblings = right_siblings[1:]
-        return any(map(lambda x: self.query.match_tree(x, mark), right_siblings))
 
     def sql(self, corpus):
         return select([corpus.sprec.c.left]).where(
@@ -1016,7 +1017,7 @@ class text(MarkingQueryFunction):
         )
 
 
-class has_metadata(QueryFunction):
+class has_metadata(MarkingQueryFunction):
     """Metadata queries.
 
     .. note:: TODO
@@ -1024,4 +1025,23 @@ class has_metadata(QueryFunction):
         - blocked on properly handling metadata in `CorpusDb._insert_node` (can now complete)
         - Should it be marking? Probably yes
     """
-    pass
+    def __init__(self, key, value):
+        super().__init__("has_metadata")
+        self.key = key
+        self.value = value
+
+    def _args(self):
+        return "\"%s\", \"%s\"" % (self.key, self.value)
+
+    @match_function
+    def match_tree(self, tree, mark=False):
+        return tree.metadata[self.key.upper()] == self.value
+
+    def sql(self, corpus):
+        raise NotImplemented()
+
+class lemma(has_metadata):
+    def __init__(self, lemma):
+        super().__init__("lemma", lemma)
+        # TODO: how to get this to print as lemma("foo") and not
+        # has_metadata("lemma", "foo")
