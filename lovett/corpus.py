@@ -186,7 +186,7 @@ class ListCorpus(CorpusBase):
         return len(self._trees)
 
     def matching_trees(self, query):
-        return ResultSet([t for t in self if t.filter_nodes(query.match_tree)],
+        return ResultSet([t for t in self if any(query.match_tree(node) for node in t.nodes())],
                          query,
                          metadata=self._metadata)
 
