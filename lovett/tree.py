@@ -270,8 +270,16 @@ class Tree(metaclass=abc.ABCMeta):
         else:
             return any((self.has_label(l) for l in list(label)))
 
-    def has_dash_tag(self, tag):
+    def _has_dash_tag_inner(self, tag):
         return self.label.endswith("-" + tag) or ("-" + tag + "-") in self.label
+
+    def has_dash_tag(self, *tags):
+        if len(tags) > 1:
+            return self.has_dash_tag(tags)
+        tag = tags[0]
+        if isinstance(tag, str):
+            return self._has_dash_tag_inner(tag)
+        return any(self._has_dash_tag_inner(t) for t in tag)
 
     @property
     def metadata(self):
