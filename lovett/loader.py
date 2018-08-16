@@ -203,7 +203,8 @@ class FileLoader(Loader):
             or only consider files immediately contained therein.
 
     """
-    def __init__(self, path, extension=".psd", recursive=False):
+    def __init__(self, path, extension=".psd", recursive=False, **kwargs):
+        super().__init__(**kwargs)
         self._path = os.path.abspath(os.path.expanduser(path))
         self._extension = extension
         self._recursive = recursive
