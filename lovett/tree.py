@@ -9,7 +9,7 @@ import unicodedata
 from yattag import Doc
 
 import lovett.util as util
-import lovett.format
+import lovett.format            # TODO: this import is circular
 
 
 # TODO: need read-only attribute for trees, from indexed corpora
