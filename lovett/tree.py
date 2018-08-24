@@ -9,7 +9,6 @@ import unicodedata
 from yattag import Doc
 
 import lovett.util as util
-import lovett.format            # TODO: this import is circular
 
 
 # TODO: need read-only attribute for trees, from indexed corpora
@@ -125,6 +124,7 @@ class Tree(metaclass=abc.ABCMeta):
             self._label == other._label
 
     def __str__(self):
+        import lovett.format
         return self.format(lovett.format.Penn)
 
     @abc.abstractmethod
@@ -406,9 +406,13 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
 
 
 def from_object(o):
+    import lovett.format
     return lovett.format._Object.read(o)
 
 
-def parse(str, format=lovett.format.Penn):
+def parse(str, format=None):
+    if format is None:
+        import lovett.format
+        format = lovett.format.Penn
     handle = io.StringIO(str)
     return format.read(handle)
