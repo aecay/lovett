@@ -8,6 +8,7 @@ import lovett.util
 
 
 # TODO: make md5 id for trees missing one
+# TODO: type declarations
 
 
 # https://stackoverflow.com/a/5656097
@@ -320,23 +321,23 @@ class _Object(Format):
     @classmethod
     def node(cls, node, **kwargs):
         if lovett.util.is_leaf(node):
-            return cls._leaf(node, **kwargs)
+            return _Object._leaf(node, **kwargs)
         else:
-            return cls._tree(node, **kwargs)
+            return _Object._tree(node, **kwargs)
 
     @classmethod
     def corpus(cls, corpus):
         return [cls.node(tree) for tree in corpus]
 
     @classmethod
-    def _leaf(cls, node):
+    def _leaf(cls, node, **kwargs):
         m = dict(node.metadata)
         return {"label": node.label,
                 "text": node.text,
                 "metadata": m}
 
     @classmethod
-    def _tree(cls, node):
+    def _tree(cls, node, **kwargs):
         return {"label": node.label,
                 "metadata": dict(node.metadata),
                 "children": [cls.node(c) for c in node.children]}
@@ -362,12 +363,16 @@ class Json(_Object):
         yield json.dumps(obj, indent=4)
 
     @classmethod
-    def leaf(cls, node):
-        yield from cls._return(super().leaf(node))
+    def node(cls, node, **kwargs):
+        yield from cls._return(super().node(node))
 
     @classmethod
-    def tree(cls, node):
-        yield from cls._return(super().tree(node))
+    def _leaf(cls, node):
+        yield from cls._return(super()._leaf(node))
+
+    @classmethod
+    def _tree(cls, node):
+        yield from cls._return(super()._tree(node))
 
     @classmethod
     def corpus(cls, corpus):

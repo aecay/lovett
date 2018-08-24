@@ -1,10 +1,9 @@
 """Functions for use in the IPython notebook interface."""
 
-from IPython.display import display, HTML
 from IPython.core.magic import (Magics, magics_class, cell_magic)
-import pkg_resources
-import keyword
 
+import ipywidgets as widgets
+from traitlets import Unicode, List, Int
 
 injected = False
 
@@ -21,18 +20,25 @@ class LovettMagics(Magics):
             self.shell.user_ns[line] = t
         return t
 
+# TODO: is it correct to do this unconditionally?  Should we do it in a
+# notebook extension callback or something?
+try:
+    ip = get_ipython()
+    ip.register_magics(LovettMagics)
+except:
+    pass
 
-def initialize():
-    global injected
-    injected = True
-    try:
-        ip = get_ipython()
-        ip.register_magics(LovettMagics)
-    except:
-        pass
-    return display(HTML("""<script>$("head").append($("<style type='text/css' />").text('%s'));</script>""" %
-                        open(pkg_resources.resource_filename("lovett", "css/ipython.css")).read().replace("\n", "\\n") +
-                        "<script>%s</script>" % open(pkg_resources.resource_filename("lovett", "js/widget.js")).read()))
+class TreeWidget(widgets.DOMWidget):
+    _view_name = Unicode("LovettTree").tag(sync=True)
+    _view_module = Unicode("lovett").tag(sync=True)
+
+    # TODO: let this be a Tree object instead, and wire up custom
+    # de/serializers
+    tree = Unicode("").tag(sync=True)
+
+    def __init__(self, json, **kwargs):
+        super().__init__(**kwargs)
+        self.tree = json
 
 
 # TODO: a widget that allows the editing of a single tree annotald-style in
