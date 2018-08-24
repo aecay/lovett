@@ -37,10 +37,13 @@ careful attention to parenthesization is needed.
 import abc
 import collections.abc
 import re
-from sqlalchemy.sql import select
-from sqlalchemy.sql.expression import union
+import unicodedata
 import itertools
 import functools
+
+from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import union
+
 from yattag import Doc
 import palettable.colorbrewer.qualitative as Colors
 
@@ -81,9 +84,10 @@ def _mark_node(match_nodes, node):
     """
     mn = node.metadata.get("query_matches", ())
     if len(mn) > 0:
-        node.metadata["query_match_colors"] = list(
-            filter(lambda x: x is not None,
-                   map(lambda x: match_nodes.get(x, None), mn)))
+        node.metadata["query_match_colors"] = list(filter(
+            lambda x: x is not None,
+            (match_nodes.get(x, None) for x in mn)))
+
 
 
 def _clear_color(node):
@@ -128,7 +132,7 @@ def _freduce_result(x):
     elif isinstance(x, collections.abc.Sequence):
         return x
     else:
-        return(x,)
+        return (x,)
 
 
 def match_function(fn):
@@ -136,7 +140,7 @@ def match_function(fn):
 
     TODO: more about what this does and why it's needed
 
-    All implementations of `QueryFunction.match_tree` should be prapped with
+    All implementations of `QueryFunction.match_tree` should be wrapped with
     this decorator.
 
     """
@@ -424,7 +428,7 @@ class QueryFunction(metaclass=abc.ABCMeta):
         # As it turns out, Set1 is the same no matter how many colors we have
         # (up to 9).  For dynamic palettes, more trickery would be needed.
         palette = itertools.cycle(Colors.Set1_9.hex_colors)
-        color_mapping = dict(map(lambda x: (x, next(palette)), mn))
+        color_mapping = {idx: color for idx, color in zip(mn, palette)}
         self.freduce(_colorize_query, color_mapping)
         return color_mapping
 
@@ -1035,13 +1039,13 @@ class has_metadata(MarkingQueryFunction):
 
     @match_function
     def match_tree(self, tree, mark=False):
-        return tree.metadata[self.key.upper()] == self.value
+        return self.key.upper() in tree.metadata and tree.metadata[self.key.upper()] == self.value
 
     def sql(self, corpus):
         raise NotImplemented()
 
 class lemma(has_metadata):
     def __init__(self, lemma):
-        super().__init__("lemma", lemma)
+        super().__init__("lemma", unicodedata.normalize("NFD", lemma))
         # TODO: how to get this to print as lemma("foo") and not
         # has_metadata("lemma", "foo")
