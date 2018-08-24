@@ -29,40 +29,6 @@ def _check_metadata_name(name):
     return name_t
 
 
-# TODO: a simpler way to do this is just to normalize the lemmata on
-# read/change
-class LemmaProxy(str):
-    # Modeled on https://stackoverflow.com/a/33272874
-    def __repr__(self):
-        return f'{type(self).__name__}({super().__repr__()})'
-
-    def __hash__(self):
-        return super().__hash__()
-
-    def __getattribute__(self, name):
-        if name == "__eq__":
-            return super().__getattribute__(name)
-        elif name in dir(str):  # only handle str methods here
-            def method(self, *args, **kwargs):
-                value = getattr(super(), name)(*args, **kwargs)
-                # not every string method returns a str:
-                if isinstance(value, str):
-                    return type(self)(value)
-                elif isinstance(value, list):
-                    return [type(self)(i) for i in value]
-                elif isinstance(value, tuple):
-                    return tuple(type(self)(i) for i in value)
-                else:  # dict, bool, or int
-                    return value
-            return method.__get__(self)  # bound method
-        else:  # delegate to parent
-            return super().__getattribute__(name)
-
-    def __eq__(self, other):
-        return unicodedata.normalize("NFD", str(self)) == \
-            unicodedata.normalize("NFD", str(other))
-
-
 class Metadata(collections.abc.MutableMapping):
     """A class that wraps a metadata dict of a py:class:`Tree`.
 
@@ -73,6 +39,9 @@ class Metadata(collections.abc.MutableMapping):
     lowercase and hyphens are converted to underscores.  Thus both
     ``metadata['OLD-TAG']`` and ``metadata.old_tag`` refer to the same key.
 
+    The key `"LEMMA"` is treated specially: all lemmata are `NFD normalized
+    <https://unicode.org/reports/tr15/>`_.
+
     """
     __slots__ = ("_dict",)
 
@@ -80,18 +49,21 @@ class Metadata(collections.abc.MutableMapping):
         if dic is None:
             self._dict = {}
         elif isinstance(dic, collections.abc.Mapping):
+            if "LEMMA" in dic:
+                dic["LEMMA"] = unicodedata.normalize("NFD", dic["LEMMA"])
             self._dict = dict(dic)
         else:
             raise ValueError("Metadata must be initialized with a mapping.")
 
     def __getitem__(self, name):
         r = self._dict[_check_metadata_name(name)]
-        if name == "LEMMA":
-            return LemmaProxy(r)
         return r
 
     def __setitem__(self, name, value):
-        self._dict[_check_metadata_name(name)] = value
+        name = _check_metadata_name(name)
+        if name == "LEMMA":
+            value = unicodedata.normalize("NFD", value)
+        self._dict[name] = value
 
     def __delitem__(self, name):
         del self._dict[_check_metadata_name(name)]
@@ -109,9 +81,7 @@ class Metadata(collections.abc.MutableMapping):
             return super().__getitem__(name)
         name = _check_metadata_name(name)
         try:
-            if name == "LEMMA":
-                return LemmaProxy(self._dict[name])
-            return self._dict[name]
+            return self[name]
         except KeyError:
             return None
 
@@ -120,12 +90,12 @@ class Metadata(collections.abc.MutableMapping):
             super().__setattr__(name, value)
             return
         name = _check_metadata_name(name)
-        self._dict[name] = value
+        self[name] = value
 
     def __delattr__(self, name):
         name = _check_metadata_name(name)
         try:
-            del self._dict[name]
+            del self[name]
         except KeyError:
             pass
 
