@@ -17,10 +17,12 @@ import collections.abc
 import json
 from io import StringIO
 
+from ipywidgets import Label, Button, VBox, HBox
+
 import lovett.tree
-import lovett.ilovett
-import lovett.widgets
+from lovett.ilovett import TreeWidget
 import lovett.format
+from lovett.format import Json
 
 
 # class CorpusInfoMeta(type):
@@ -35,6 +37,35 @@ import lovett.format
 
 # class CorpusInfo(metaclass=CorpusInfoMeta):
 #     pass
+
+# Helper functions for Jupyter widgets
+
+def _build_tree_view(corpus):
+    l = len(self)
+    if l == 0:
+        return Label("Empty corpus")
+    current = 0
+    button_down = Button(description="<")
+    button_up = Button(description=">")
+    widget = TreeWidget(self[0].format(Json))
+    label = Label(value=f"{current + 1} / {l}")
+    def on_down(_):
+        nonlocal current
+        current = max((0, current - 1))
+        do_change()
+    def on_up(_):
+        nonlocal current
+        current = min((current + 1, l - 1))
+        do_change()
+    def do_change():
+        label.value = f"{current + 1} / {l}"
+        widget.tree = self[current].format(Json)
+    button_down.on_click(on_down)
+    button_up.on_click(on_up)
+    control_box = HBox([button_down, button_up, label])
+    vbox = VBox([control_box, widget])
+
+    return vbox
 
 
 class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
@@ -146,11 +177,15 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
             handle.write(t.format(lovett.format.Json))
             handle.write("\n")
 
-    def _ipython_display_(self, **kwargs):
-        if lovett.ilovett.injected:
-            lovett.widgets.TreesView(self)._ipython_display_()
-        else:
-            display(repr(self))
+    def _ipython_display_(self):
+        tabs = widget.Tab()
+        tabs.children = [self._ipython_overview(), _build_tree_view(self)]
+        tabs.set_title(0, "Overview")
+        tabs.set_title(1, "Trees")
+        display(tabs)
+
+    def _ipython_overview(self):
+        return widgets.HTML(f"""A corpus of {len(self)} trees.""")
 
     def __repr__(self):
         return "<%s of %d trees>" % (type(self), len(self))
@@ -241,11 +276,9 @@ class ResultSet(ListCorpus):
     def __str__(self):
         return repr(self)
 
-    def _ipython_display_(self):
-        if lovett.ilovett.injected:
-            lovett.widgets.ResultsView(self, self._query)._ipython_display_()
-        else:
-            display(repr(self))
+    # TODO: in ipython display, allow toggling between showing just matched
+    # node vs showing entire tree
+
 
 
 # TODO: rename to from_handle to better respect the working...or add
