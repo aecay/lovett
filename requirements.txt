@@ -1,9 +1,7 @@
-ipython~=5.3
-ipywidgets~=6.0
+ipython~=6.5
+ipywidgets~=7.0
 palettable~=3.0
 pygithub~=1.26
 requests~=2.8
 sqlalchemy~=1.0
 yattag~=1.5
-owlready~=0.3
-rdflib~=4.2.2
