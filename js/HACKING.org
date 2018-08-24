@@ -1,0 +1,9 @@
+How to build:
+
+- in this directory:
+  - ~npm run build~
+- in destination venv
+  - ~pip install -e /path/to/lovett~
+  - ~jupyter nbextension install --sys-prefix --py lovett; jupyter nbextension enable --sys-prefix --py lovett~
+
+TODO: labplugin.js for jupyterlab
