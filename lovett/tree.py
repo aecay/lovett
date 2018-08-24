@@ -6,9 +6,10 @@ import io
 import re
 import unicodedata
 
-from yattag import Doc
-
 import lovett.util as util
+
+import ipywidgets as widgets
+from traitlets import Unicode
 
 
 # TODO: need read-only attribute for trees, from indexed corpora
@@ -134,21 +135,14 @@ class Tree(metaclass=abc.ABCMeta):
     def format(self, formatter):
         return "".join((x for x in formatter.node(self, indent=0)))
 
-    @abc.abstractmethod
-    def _repr_html_(self):
-        pass
-
-    def _label_html(self, doc):
-        doc, tag, txt = doc.tagtext()
-        with tag("span", klass="tree-label"):
-            colors = self.metadata.get("query_match_colors", ())
-            if len(colors) > 0:
-                doc.attr(style="color: %s;" % colors[0])
-            txt(self.label)
-            if len(colors) > 1:
-                for color in colors[1:]:
-                    with tag("span", style="color: %s;" % color):
-                        txt("✓")
+    # https://ipython.readthedocs.io/en/stable/config/integrating.html
+    # TODO: do this as a html representation instead, so that display works in
+    # non-interactive environments?  Or how is widget display supposed to work
+    # non-interactively?
+    def _ipython_display_(self):
+        from lovett.ilovett import TreeWidget
+        from lovett.format import Json
+        display(TreeWidget(self.format(Json)))
 
     @property
     def label(self):
@@ -295,14 +289,6 @@ class Leaf(Tree):
             return "LOVETT_DEL_SP" + self.text
         return self.text
 
-    def _repr_html_(self):
-        doc, tag, txt = Doc().tagtext()
-        with tag("div", klass="tree-node tree-leaf"):
-            self._label_html(doc)
-            with tag("span", klass="tree-text"):
-                txt(self.text)
-        return doc.getvalue()
-
     def nodes(self):
         yield self
 
@@ -391,13 +377,6 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
                                    self.label,
                                    childstr,
                                    ", metadata=%r" % self.metadata if self.metadata != {} else "")
-
-    def _repr_html_(self):
-        doc, tag, txt = Doc().tagtext()
-        with tag("div", klass="tree-node"):
-            self._label_html(doc)
-            doc.asis("".join(map(lambda x: x._repr_html_(), self)))
-        return doc.getvalue()
 
     def nodes(self):
         yield self
