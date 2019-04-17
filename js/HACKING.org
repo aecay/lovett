@@ -1,5 +1,7 @@
 How to build:
 
+- in annotald-el directory:
+  - ~elm make src/TreeView.elm --output=../lovett/js/tree-view.js~
 - in this directory:
   - ~npm run build~
 - in destination venv
