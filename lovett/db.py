@@ -16,10 +16,16 @@ however:
 import sqlalchemy
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, MetaData, Index
 from sqlalchemy.sql import select
+import sqlalchemy.event
+import pathlib
 
 import lovett.util as util
 import lovett.corpus as corpus
 import lovett.tree as tree
+
+
+def _sqlite_pragmas(dbapi_conn, conn_record):
+    dbapi_conn.execute("PRAGMA case_sensitive_like=ON;")
 
 
 class CorpusDb(corpus.CorpusBase):
@@ -37,7 +43,8 @@ class CorpusDb(corpus.CorpusBase):
 
     .. note:: TODO
 
-       the roots attribute needs more work (is this still true? 12/1/15)
+       the roots attribute needs more work (is this still true? 12/1/15) (yes
+       12/19)
 
     Attributes:
         engine (`sqlalchemy.engine.Engine`): the database engine (*private*)
@@ -56,11 +63,19 @@ class CorpusDb(corpus.CorpusBase):
             incrementing this value.
 
     """
-    def __init__(self, other=None, roots=None):
+    def __init__(self, other=None, roots=None, filename=None):
         """TODO: document"""
         if other is None:
+            preexisting = False
+            if filename is None:
+                filename = "sqlite:///:memory:"
+            else:
+                # TODO: Will this break with backslashes on Windows?
+                preexisting = pathlib.Path(filename).exists()
+                filename = "sqlite:///" + filename
             # Initialize an empty corpus, creating the db from scratch
-            self.engine = sqlalchemy.create_engine("sqlite:///:memory:")
+            self.engine = sqlalchemy.create_engine(filename)
+            sqlalchemy.event.listen(self.engine, "connect", _sqlite_pragmas)
             self.metadata = MetaData()
             self.nodes = Table("nodes", self.metadata,
                                Column("rowid", Integer, primary_key=True),
@@ -73,24 +88,33 @@ class CorpusDb(corpus.CorpusBase):
                              # Needed for query functions
                              Index("child_depth", "child", "depth"),
                              # Needed for reconstitute
-                             Index("parent_depth", "parent", "depth")
-            )
+                             Index("parent_depth", "parent", "depth"))
             self.sprec = Table("sprec", self.metadata,
                                Column("left", Integer, ForeignKey("nodes.rowid")),
                                Column("right", Integer, ForeignKey("nodes.rowid")),
                                Column("distance", Integer),
                                # Needed for query functions
-                               Index("right_distance", "right", "distance")
-                               #, Index("left_idx", "left")
-            )
+                               Index("right_distance", "right", "distance"))
             self.tree_metadata = Table("metadata", self.metadata,
                                        Column("id", Integer, ForeignKey("nodes.rowid")),
                                        Column("key", String),
                                        Column("value", String),
                                        Index("id_key", "id", "key"))
-            self.metadata.create_all(self.engine)
-            self.roots = []
-            self.id = 1
+            self.roots_db = Table("roots", self.metadata,
+                                  Column("id", Integer, ForeignKey("nodes.rowid")))
+            if preexisting:
+                self._frozen = True
+                c = self.engine.connect()
+                self.roots = list(map(lambda x: x[0],
+                                      c.execute(select([self.roots_db.c.id])).fetchall()))
+                # Since this is a read-only corpus, we don't need to worry
+                # about setting the ID.
+                self.id = None
+            else:
+                self._initialize_db()
+                self._frozen = False
+                self.roots = []
+                self.id = 1
         else:
             # Create a corpus that is a clone of another corpus
             # TODO: make this a class method, not a variant of init
@@ -111,6 +135,12 @@ class CorpusDb(corpus.CorpusBase):
                 self.roots = roots
 
             self.id = other.id
+            # Clones will in general be ResultSets etc. -- only the parent
+            # corpus should be able to be modified
+            self._frozen = True
+
+    def _initialize_db(self):
+        self.metadata.create_all(self.engine)
 
     def _insert_metadata(self, c, node_id, dic, prefix=""):
         """Inner function for inserting metadata into the database.
@@ -199,8 +229,16 @@ class CorpusDb(corpus.CorpusBase):
         the class.
 
         """
+        if self._frozen:
+            raise ValueError("This CorpusDb is read-only")
         rowid = self._insert_node(conn, t)
         self.roots.append(rowid)
+        # TODO: This redundnacy is not good.  We use it for getting the list
+        # of roots from a corpus saved to a file (__init__ where preexisting =
+        # True), but we could do away with it by using a query to find all
+        # undominated nodes in the DB
+        conn.execute(self.roots_db.insert(),
+                     id=rowid)
 
     def insert_tree(self, t):
         """Insert a single tree into the corpus.
@@ -294,13 +332,10 @@ class CorpusDb(corpus.CorpusBase):
     def matching_trees(self, query):
         c = self.engine.connect()
         s = query.sql(self)
-        r = list(map(lambda x: x[0], c.execute(s).fetchall()))
-        return CorpusDb(self, r)
-
-    # Instance methods
-    def to_corpus(self):
-        """Convert to a `Corpus`."""
-        c = corpus.Corpus([])
-        for t in self:
-            c.append(t)
-        return c
+        # TODO: still need to benchmark/examine query plan here to make sure
+        # we don't need another index
+        roots_query = select([self.dom.c.parent]).where(
+            self.dom.c.child.in_(s) &
+            self.dom.c.parent.in_(select([self.roots_db.c.id]))).distinct()
+        r = list(map(lambda x: x[0], c.execute(roots_query).fetchall()))
+        return corpus.ResultSet(CorpusDb(self, r), query)

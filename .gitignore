@@ -2,8 +2,19 @@
 /.eggs/
 /lovett.egg-info/
 __pycache__/
-/.ipynb_checkpoints/
+.ipynb_checkpoints/
 /doc/build/
 /doc/html/
 /build/
 /dist/
+/.coverage
+/cover/
+
+# CorpusSearch results
+*.out
+
+# DB files
+*.pcdb
+
+# PPCHE files (should not be distributed)
+*.ref

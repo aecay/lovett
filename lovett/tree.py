@@ -135,6 +135,11 @@ class Tree(metaclass=abc.ABCMeta):
     def format(self, formatter):
         return "".join((x for x in formatter.node(self, indent=0)))
 
+    @abc.abstractmethod
+    def _repr_html_(self):
+        # TODO: needs to handle INDEX/IDX-TYPE metadata
+        pass
+
     # https://ipython.readthedocs.io/en/stable/config/integrating.html
     # TODO: do this as a html representation instead, so that display works in
     # non-interactive environments?  Or how is widget display supposed to work
@@ -253,6 +258,13 @@ class Tree(metaclass=abc.ABCMeta):
     def metadata(self, new_meta):
         self._metadata = Metadata(new_meta)
 
+    @property
+    def word_count(self):
+        count = 0
+        for node in self:
+            count += node.word_count
+        return count
+
 
 def _index_string_for_metadata(metadata):
     idx = metadata.index
@@ -291,6 +303,15 @@ class Leaf(Tree):
 
     def nodes(self):
         yield self
+
+    @property
+    def word_count(self):
+        if util.is_silent(self):
+            return 0
+        else:
+            # TODO: split/joined words
+            return 1
+
 
 
 class NonTerminal(Tree, collections.abc.MutableSequence):
@@ -395,3 +416,90 @@ def parse(str, format=None):
         format = lovett.format.Penn
     handle = io.StringIO(str)
     return format.read(handle)
+def _postprocess_parsed(l):
+    if not isinstance(l[0], str):
+        # Root node
+        tree = None
+        id = None
+        try:
+            while True:
+                v = l.pop()
+                if v[0] == 'ID':
+                    id = v[1]
+                elif v[0] == "METADATA":
+                    # TODO
+                    pass
+                else:
+                    if tree:
+                        raise ParseError("Too many children of root node (or label-less node)")
+                    tree = v
+        except IndexError:
+            pass
+        try:
+            r = _postprocess_parsed(tree)
+            # TODO: We should instead insert a hash-based id.
+            # TODO: think about the differece between id and fingerprint (for
+            # backwards compatibility: fingerprint is the hash-based one,
+            # which is better)
+            r.metadata.id = id or ABSENT_ID
+            return r
+        except ParseError as e:
+            print("error in id: %s" % id)
+            raise e
+    if len(l) < 2:
+        raise ParseError("malformed tree: node has too few children: %s" % l)
+    if isinstance(l[1], str):
+        m = {}
+        # Simple leaf
+        if len(l) != 2:
+            raise ParseError("malformed tree: leaf has too many children: %s" % l)
+        label = l[0]
+        text = l[1]
+        if util.is_trace_string(l[1]):
+            text, idx_type, index = util.label_and_index(text)
+            if index is not None:
+                m['INDEX'] = index
+                m['IDX-TYPE'] = idx_type
+        else:
+            label, idx_type, index = util.label_and_index(label)
+            if index is not None:
+                m['INDEX'] = index
+                m['IDX-TYPE'] = idx_type
+        return Leaf(label, text, m)
+    # Regular node
+    m = {}
+    label, idx_type, index = util.label_and_index(l[0])
+    if index is not None:
+        m['INDEX'] = index
+        m['IDX-TYPE'] = idx_type
+    return NonTerminal(label, map(lambda x: _postprocess_parsed(x), l[1:]), m)
+
+
+# TODO: better parse errors
+def parse(string):
+    stack = []
+    stream = _tokenize(string)
+    r = None
+    for token in stream:
+        if token == '(':
+            stack.append([])
+        elif token == ')':
+            r = stack.pop()
+            try:
+                stack[len(stack) - 1].append(r)
+            except IndexError:
+                # the final closing bracket
+                break
+        else:
+            try:
+                stack[len(stack) - 1].append(token)
+            except Exception:
+                raise ParseError("error with stack: %s; string = %s" % (stack, string))
+
+    n = next(stream, None)
+    if n is not None:
+        raise ParseError("unmatched closing bracket: %s" % r)
+    if not len(stack) == 0:
+        raise ParseError("unmatched opening bracket: %s" % stack)
+
+    return r and _postprocess_parsed(r)

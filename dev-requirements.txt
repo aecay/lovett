@@ -4,3 +4,4 @@ jedi
 nose
 Sphinx
 lxml
+coverage
