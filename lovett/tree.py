@@ -229,7 +229,7 @@ class Tree(metaclass=abc.ABCMeta):
         label = args[0]
         if isinstance(label, str):
             return self.label == label or self.label.startswith(label + "-")
-        elif isinstance(label, re._pattern_type):
+        elif hasattr(label, "match"):
             return label.match(self.label) is not None
         else:
             return any((self.has_label(l) for l in list(label)))
@@ -251,7 +251,7 @@ class Tree(metaclass=abc.ABCMeta):
 
     @metadata.setter
     def metadata(self, new_meta):
-        self.metadata = Metadata(new_meta)
+        self._metadata = Metadata(new_meta)
 
 
 def _index_string_for_metadata(metadata):
@@ -297,7 +297,7 @@ class NonTerminal(Tree, collections.abc.MutableSequence):
     __slots__ = ["_children"]
 
     def __init__(self, label, children, metadata=None):
-        super(NonTerminal, self).__init__(label, metadata)
+        super().__init__(label, metadata)
         # Coerce to a list; we don't want any generators to sneak in
         self._children = list(children)
         for child in self._children:  # pragma: no branch
