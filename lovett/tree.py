@@ -135,11 +135,6 @@ class Tree(metaclass=abc.ABCMeta):
     def format(self, formatter):
         return "".join((x for x in formatter.node(self, indent=0)))
 
-    @abc.abstractmethod
-    def _repr_html_(self):
-        # TODO: needs to handle INDEX/IDX-TYPE metadata
-        pass
-
     # https://ipython.readthedocs.io/en/stable/config/integrating.html
     # TODO: do this as a html representation instead, so that display works in
     # non-interactive environments?  Or how is widget display supposed to work
