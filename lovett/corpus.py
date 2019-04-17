@@ -17,7 +17,7 @@ import collections.abc
 import json
 from io import StringIO
 
-from ipywidgets import Label, Button, VBox, HBox
+from ipywidgets import Label, Button, VBox, HBox, Tab, HTML
 
 import lovett.tree
 from lovett.ilovett import TreeWidget
@@ -41,25 +41,27 @@ from lovett.format import Json
 # Helper functions for Jupyter widgets
 
 def _build_tree_view(corpus):
-    l = len(self)
-    if l == 0:
+    length = len(corpus)
+    if length == 0:
         return Label("Empty corpus")
     current = 0
     button_down = Button(description="<")
     button_up = Button(description=">")
-    widget = TreeWidget(self[0].format(Json))
-    label = Label(value=f"{current + 1} / {l}")
+    widget = TreeWidget(corpus[0].format(Json))
+    label = Label(value=f"{current + 1} / {length}")
     def on_down(_):
         nonlocal current
         current = max((0, current - 1))
         do_change()
     def on_up(_):
         nonlocal current
-        current = min((current + 1, l - 1))
+        current = min((current + 1, length - 1))
         do_change()
     def do_change():
-        label.value = f"{current + 1} / {l}"
-        widget.tree = self[current].format(Json)
+        nonlocal corpus
+        nonlocal current
+        label.value = f"{current + 1} / {length}"
+        widget.tree = corpus[current].format(Json)
     button_down.on_click(on_down)
     button_up.on_click(on_up)
     control_box = HBox([button_down, button_up, label])
@@ -125,7 +127,7 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
         # implement this in the db backend as well (just AND together the
         # query and the root query?)  TODO: figure out if this would actually
         # be an optimization
-        raise NotImplemented
+        raise NotImplementedError
 
     def to_db(self):
         """Return a `CorpusDb` object containing the trees from the corpus."""
@@ -178,14 +180,14 @@ class CorpusBase(collections.abc.Sequence, metaclass=abc.ABCMeta):
             handle.write("\n")
 
     def _ipython_display_(self):
-        tabs = widget.Tab()
+        tabs = Tab()
         tabs.children = [self._ipython_overview(), _build_tree_view(self)]
         tabs.set_title(0, "Overview")
         tabs.set_title(1, "Trees")
         display(tabs)
 
     def _ipython_overview(self):
-        return widgets.HTML(f"""A corpus of {len(self)} trees.""")
+        return HTML(f"""A corpus of {len(self)} trees.""")
 
     def __repr__(self):
         return "<%s of %d trees>" % (type(self), len(self))
@@ -278,7 +280,6 @@ class ResultSet(ListCorpus):
 
     # TODO: in ipython display, allow toggling between showing just matched
     # node vs showing entire tree
-
 
 
 # TODO: rename to from_handle to better respect the working...or add
