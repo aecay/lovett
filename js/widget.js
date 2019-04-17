@@ -11,12 +11,15 @@ const LovettTree = widgets.DOMWidgetView.extend({
         this.model.on("change:tree", tree_changed, this);
         var container = document.createElement("div");
         this.el.appendChild(container);
-        var view = tree_view.TreeView.embed(container, {
-            tree: this.model.get("tree"),
-            snodeClass: style.snode,
-            ipClass: style.ip,
-            selectedClass: style.selected,
-            wnodeClass: style.wnode
+        var view = tree_view.Elm.TreeView.init({
+            node: container,
+            flags: {
+                tree: this.model.get("tree"),
+                snodeClass: style.snode,
+                ipClass: style.ip,
+                selectedClass: style.selected,
+                wnodeClass: style.wnode
+            }
         });
 
         function tree_changed() {
